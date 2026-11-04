@@ -46,6 +46,8 @@ public class Mascot extends View {
         default void onLand() {}
         default void onLevelUp(int level) {}
         default void onTalk(String text) {}
+        default void onScream() {}
+        default void onStartle() {}
         /** Ein Stein bröckelt ab (Bildschirmkoordinaten, Größe in px). */
         default void onCrumble(float screenX, float screenY, float size, int color) {}
     }
@@ -128,6 +130,11 @@ public class Mascot extends View {
     private float carX = HERO_X - CAR_GAP, carY, carVy;
     private boolean carAir;
     private float puffTimer, wheelPhase;
+    // Verfolgung: Zusammenstoß (rot blinken, kreischen), Schulterblick und Erschrecken
+    private float hitTimer, lookBack, startle, sprint;
+    private boolean chasing;              // Auto holt nach einem Stolperer richtig auf
+    private long nextLookBack;
+    int hits;                             // für den Test
     private final List<float[]> puffs = new ArrayList<>(); // {x, y, alter}
     private long nextBlink, blinkUntil;
     private long nextEmote, emoteStart; private boolean emoteOn;
@@ -145,6 +152,7 @@ public class Mascot extends View {
         nextBlink = now + 2500;
         nextEmote = now + 12000;
         nextChatter = now + 6000;
+        nextLookBack = now + 7000;
     }
 
     /** Taste 0: Pixel springt selbst. */
@@ -209,6 +217,14 @@ public class Mascot extends View {
         return stars;
     }
 
+    /** Nur für die Vorschau: Pixel gerade vom Auto erwischt. */
+    void previewHit() {
+        preview(Emote.NONE, false);
+        hitTimer = 0.6f; speech = "IIIIIH!"; speechStart = SystemClock.uptimeMillis();
+        carX = HERO_X - 16; jumpY = 2;
+        invalidate();
+    }
+
     /** Nur für die Vorschau: feste Szene. */
     void preview(Emote e, boolean night) {
         forceNight = night;
@@ -271,6 +287,25 @@ public class Mascot extends View {
         float speed = SPEED * Math.min(1.5f, 1 + 0.07f * (level - 1));
         if (stumble > 0) speed *= 0.3f;
         stumble = Math.max(0, stumble - dt);
+        hitTimer = Math.max(0, hitTimer - dt);
+        sprint = Math.max(0, sprint - dt);
+        if (startle > 0) startle = Math.max(0, startle - dt);
+        if (lookBack > 0) {
+            lookBack -= dt;
+            if (lookBack <= 0) {                     // ...und erschrickt beim Blick nach hinten
+                startle = 0.7f; sprint = 1.6f;
+                showEmote(Emote.BANG);
+                if (!airborne) { vy = 16; airborne = true; }
+                if (rnd.nextInt(3) == 0) {
+                    String[] lines = {"Huch!", "Es verfolgt mich!", "Schneller!", "Hilfe!"};
+                    say(lines[rnd.nextInt(lines.length)]);
+                }
+                if (events != null) events.onStartle();
+            }
+        } else if (now >= nextLookBack && !airborne && hitTimer == 0 && stumble == 0) {
+            lookBack = 0.8f;                         // über die Schulter schauen
+            nextLookBack = now + 8000 + rnd.nextInt(9000);
+        }
         float dx = speed * dt;
         scroll += dx;
 
@@ -381,6 +416,7 @@ public class Mascot extends View {
                 if (simulating && stumbleLog.size() < 50) stumbleLog.add("typ=" + th.type + " miss=" + th.miss + " air=" + airborne + " floor=" + floor + " jumpY=" + String.format(java.util.Locale.ROOT, "%.1f", jumpY) + " vy=" + String.format(java.util.Locale.ROOT, "%.1f", vy));
                 stumble = 0.9f;
                 stumbles++;
+                chasing = rnd.nextInt(100) < 75;
                 showEmote(Emote.BANG);
                 say(rnd.nextBoolean() ? "Autsch!" : "Hoppla!");
                 if (events != null) events.onBump();
@@ -391,10 +427,21 @@ public class Mascot extends View {
 
     /** Auto folgt Pixel: rückt näher, wenn er stolpert, hüpft über Hindernisse, pafft Rauch. */
     private void stepCar(float dt, float speed) {
-        float target = HERO_X - (stumble > 0 ? CAR_GAP * 0.55f : CAR_GAP);
-        carX += (target - carX) * Math.min(1, dt * 1.2f);
-        carX = Math.min(carX, HERO_X - 19);                 // nie auffahren
+        boolean closing = stumble > 0 && chasing;
+        float target = closing ? HERO_X - 14 : HERO_X - CAR_GAP - (sprint > 0 ? 4 : 0);
+        carX += (target - carX) * Math.min(1, dt * (closing ? 3f : 1.2f));
+        if (!closing) carX = Math.min(carX, HERO_X - 19);   // ohne Stolperer kein Auffahren
         wheelPhase += speed * dt;
+        // Zusammenstoß: Stoßstange erreicht Pixel
+        if (closing && hitTimer <= 0 && !carAir && carX + 17 >= HERO_X + 2) {
+            hitTimer = 1.0f; hits++;
+            chasing = false; stumble = 0;
+            say("IIIIIH!");
+            showEmote(Emote.BANG);
+            if (events != null) events.onScream();
+            vy = 20; airborne = true;               // nach vorn geschubst
+            carX -= 7;                              // Auto prallt zurück und bremst
+        }
         // Hindernis direkt vor dem Auto -> kleiner Hüpfer
         if (!carAir) {
             for (Thing th : things) {
@@ -493,7 +540,8 @@ public class Mascot extends View {
         float ox = HERO_X * cell;
         float bob = airborne || sleeping ? 0 : (float) Math.abs(Math.sin(t * Math.PI * 3)) * cell * 0.6f;
         float sit = sleeping ? cell * 1.5f : 0;
-        float shake = stumble > 0 ? (float) Math.sin(t * 60) * cell * 0.5f : 0;
+        float shake = stumble > 0 || hitTimer > 0 ? (float) Math.sin(t * 60) * cell * (hitTimer > 0 ? 0.8f : 0.5f)
+                : startle > 0 ? (float) Math.sin(t * 45) * cell * 0.3f : 0;
         float oy = ground - 12 * cell - jumpY * cell - bob + sit;
 
         // Schatten (wird beim Springen kleiner)
@@ -667,8 +715,10 @@ public class Mascot extends View {
             for (int col = 0; col < line.length(); col++) {
                 char ch = line.charAt(col);
                 if (ch == '.') continue;
-                paint.setColor(ch == 'A' ? (row == 0 ? 0xFFFFC07A : SHADOW) : ch == 'H' ? HIGHLIGHT
-                        : ch == 'S' ? SHADOW : BODY_COLOR);
+                boolean red = hitTimer > 0 && ((now / 110) % 2 == 0);   // rot blinken nach dem Zusammenstoß
+                paint.setColor(ch == 'A' ? (row == 0 ? 0xFFFFC07A : SHADOW)
+                        : ch == 'H' ? (red ? 0xFFFF8080 : HIGHLIGHT)
+                        : ch == 'S' ? (red ? 0xFFB82E2E : SHADOW) : (red ? 0xFFE84545 : BODY_COLOR));
                 px(c, ox + col * cell, oy + row * cell);
             }
         }
@@ -681,7 +731,7 @@ public class Mascot extends View {
             px(c, ox + 3 * cell, ly); px(c, ox + 4 * cell, ly);
             px(c, ox + 9 * cell, ly); px(c, ox + 10 * cell, ly);
         } else {
-            boolean a = ((now / 120) % 2) == 0;
+            boolean a = ((now / (sprint > 0 ? 70 : 120)) % 2) == 0;
             px(c, ox + (a ? 2 : 3) * cell, ly); px(c, ox + (a ? 2 : 3) * cell, ly + cell);
             px(c, ox + (a ? 10 : 9) * cell, ly); px(c, ox + (a ? 11 : 10) * cell, ly + cell);
         }
@@ -698,25 +748,49 @@ public class Mascot extends View {
         soft.setColor(0x4D000000);
 
         // Augen (schauen nach vorn), Mund, Wangen
-        boolean closed = sleeping || now < blinkUntil;
+        boolean scared = hitTimer > 0 || startle > 0;
+        boolean back = lookBack > 0 && !scared;
+        boolean closed = !scared && (sleeping || now < blinkUntil);
         float ey = oy + 5 * cell;
         for (int eye = 0; eye < 2; eye++) {
-            float ex = ox + (eye == 0 ? 4 : 10) * cell;
+            float ex = ox + (eye == 0 ? (back ? 2 : 4) : (back ? 8 : 10)) * cell;
             paint.setColor(INK);
-            if (closed) {
+            if (scared) {
+                // weit aufgerissen: weißes Auge mit winziger Pupille
+                rect.set(ex - cell * 0.3f, ey - cell * 0.4f, ex + cell * 2.3f, ey + cell * 2.2f);
+                c.drawRect(rect, paint);
+                paint.setColor(0xFFFFFFFF);
+                rect.set(ex, ey - cell * 0.1f, ex + cell * 2f, ey + cell * 1.9f);
+                c.drawRect(rect, paint);
+                paint.setColor(INK);
+                rect.set(ex + cell * 0.7f, ey + cell * 0.6f, ex + cell * 1.3f, ey + cell * 1.2f);
+                c.drawRect(rect, paint);
+            } else if (closed) {
                 rect.set(ex, ey + cell, ex + 2 * cell, ey + cell * 1.5f);
                 c.drawRect(rect, paint);
             } else {
                 rect.set(ex, ey, ex + 2 * cell, ey + 2 * cell);
                 c.drawRect(rect, paint);
                 paint.setColor(0xFFFFFFFF);
-                rect.set(ex + cell, ey + cell * 0.25f, ex + cell * 1.6f, ey + cell * 0.85f);
+                float hx = back ? ex + cell * 0.2f : ex + cell;   // Glanzpunkt zeigt die Blickrichtung
+                rect.set(hx, ey + cell * 0.25f, hx + cell * 0.6f, ey + cell * 0.85f);
                 c.drawRect(rect, paint);
             }
         }
         paint.setColor(INK);
         float my = oy + 8 * cell;
-        if (stumble > 0 || (emote == Emote.BANG && emoteActive(now))) {
+        if (hitTimer > 0) {
+            // weit aufgerissener Schrei-Mund mit Zunge
+            rect.set(ox + 5.5f * cell, my - cell * 0.6f, ox + 9.5f * cell, my + cell * 2.2f);
+            c.drawRect(rect, paint);
+            paint.setColor(0xFFE84545);
+            rect.set(ox + 6.5f * cell, my + cell * 1.2f, ox + 8.5f * cell, my + cell * 2.2f);
+            c.drawRect(rect, paint);
+            paint.setColor(INK);
+        } else if (startle > 0) {
+            rect.set(ox + 6.8f * cell, my - cell * 0.2f, ox + 8.2f * cell, my + cell * 1.2f);
+            c.drawRect(rect, paint);
+        } else if (stumble > 0 || (emote == Emote.BANG && emoteActive(now))) {
             rect.set(ox + 7 * cell, my - cell * 0.2f, ox + 8.5f * cell, my + cell);
             c.drawRect(rect, paint);
         } else if (!sleeping) {

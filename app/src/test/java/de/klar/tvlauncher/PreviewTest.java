@@ -297,7 +297,7 @@ public class PreviewTest {
         f.setBackground(AbendBackground.create(paparazzi.getContext()));
         Mascot m = new Mascot(paparazzi.getContext());
         f.addView(m, new android.widget.FrameLayout.LayoutParams(-2, -2, android.view.Gravity.CENTER));
-        m.preview(Mascot.Emote.HEART, false);
+        m.previewHit();
         paparazzi.snapshot(f, "mascot");
     }
 
@@ -308,7 +308,8 @@ public class PreviewTest {
             Mascot m = new Mascot(paparazzi.getContext());
             int stars = m.simulate(120, seed);
             for (String l : m.stumbleLog) System.out.println("  Stolperer " + seed + ": " + l);
-            System.out.println("Seed " + seed + ": Sterne=" + stars + " Hindernisse=" + m.obstaclesSpawned + " Stolperer=" + m.stumbles + " Plattform-Landungen=" + m.landings);
+            System.out.println("Seed " + seed + ": Sterne=" + stars + " Hindernisse=" + m.obstaclesSpawned + " Stolperer=" + m.stumbles + " Plattform-Landungen=" + m.landings + " Auto-Treffer=" + m.hits);
+            org.junit.Assert.assertTrue("Auto trifft nur nach Stolperern", m.hits <= m.stumbles);
             org.junit.Assert.assertTrue("nutzt Plattformen", m.landings >= 2);
             org.junit.Assert.assertTrue("sammelt Sterne", stars >= 5);
             org.junit.Assert.assertTrue("genug Hindernisse", m.obstaclesSpawned >= 25);

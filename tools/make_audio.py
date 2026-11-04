@@ -232,6 +232,30 @@ def sfx_crunch():
         y += 0.45 * (v - y); out_.append(y)
     return out_
 
+def sfx_scream():
+    # kurzes, quietschiges "Iiiih!" einer kleinen Figur: hohe, zitternde Tonhöhe, die leicht abfällt
+    n = int(0.5 * SR); s = []; ph = 0
+    for i in range(n):
+        t = i / SR
+        f = 1150 - 380 * (t / 0.5) + 90 * math.sin(2 * math.pi * 18 * t)   # schnelles Zittern
+        ph += f / SR
+        v = math.sin(2 * math.pi * ph) * 0.7 + (1 if (ph % 1) < 0.3 else -1) * 0.25
+        env = min(1, t / 0.02) * (1 if t < 0.35 else max(0, 1 - (t - 0.35) / 0.15))
+        s.append(v * env)
+    return s
+
+def sfx_startle():
+    # erschrockenes "Hü!": kurzer, nach oben springender Ton
+    n = int(0.16 * SR); s = []; ph = 0
+    for i in range(n):
+        t = i / SR
+        f = 500 + 900 * min(1, t / 0.06)
+        ph += f / SR
+        s.append(math.sin(2 * math.pi * ph) * min(1, t / 0.005) * math.exp(-t * 14))
+    return s
+
+write(out + "/sfx_scream.wav", sfx_scream(), 0.32)
+write(out + "/sfx_startle.wav", sfx_startle(), 0.3)
 write(out + "/sfx_suck.wav", sfx_suck(), 0.3)
 write(out + "/sfx_crunch.wav", sfx_crunch(), 0.35)
 write(out + "/sfx_engine.wav", sfx_engine(), 0.3)

@@ -16,7 +16,7 @@ final class SoundFx {
 
     private final Context context;
     private SoundPool pool;
-    private int jump, star, bump, talk, levelUp, land, engine, suck, crunch;
+    private int jump, star, bump, talk, levelUp, land, engine, suck, crunch, scream, startle;
     private int engineStream; private boolean engineWanted, engineLoaded;
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final java.util.Random rnd = new java.util.Random();
@@ -49,6 +49,8 @@ final class SoundFx {
         engine = pool.load(context, R.raw.sfx_engine, 1);
         suck = pool.load(context, R.raw.sfx_suck, 1);
         crunch = pool.load(context, R.raw.sfx_crunch, 1);
+        scream = pool.load(context, R.raw.sfx_scream, 1);
+        startle = pool.load(context, R.raw.sfx_startle, 1);
         pool.setOnLoadCompleteListener((p, id, status) -> {
             if (id == engine && status == 0) { engineLoaded = true; if (engineWanted) startEngine(); }
         });
@@ -61,6 +63,8 @@ final class SoundFx {
     void levelUp() { play(levelUp, 1f); }
     void suck() { play(suck, 0.45f); }
     void crunch() { play(crunch, 0.8f); }
+    void scream() { play(scream, 0.9f); }
+    void startle() { play(startle, 0.6f); }
 
     /** Plapper-Laute zum Spruch: eine Silbe je zwei Buchstaben, Tonhöhe leicht wechselnd. */
     void talk(String text) {

@@ -42,7 +42,9 @@ sie weg. Dahinter ein **Pixel-Himmel** über die ganze Startansicht (`SkyLayer`)
 Flugzeuge mit Kondensstreifen, ein Heißluftballon, tagsüber eine Sonne, abends Mond, Sternschnuppen und
 Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps. Hinter Pixel fährt ein kleines
 **Pixel-Auto** (eigene Figur) her: drehende Räder, Rauch aus dem Auspuff, hüpft über Hindernisse, rückt
-näher, wenn Pixel stolpert, und brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
+näher, wenn Pixel stolpert – und erwischt ihn dann meistens: Pixel **kreischt**, **blinkt rot** und
+macht einen Schrei-Mund. Im Normalzustand **schaut Pixel immer wieder über die Schulter**, erschrickt
+(großer Blick, „!“, kleiner Hüpfer, manchmal „Es verfolgt mich!“) und sprintet kurz. Das Auto brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
 Die wegbröckelnden Steine fallen herunter und werden zur **ersten App** gezogen: Dort steht **Schluck**
 (eigene Figur, lange Arme und Beine) und saugt sie ein – Level 1–2 entspannt (jeder 4. Stein), mit
 steigendem Level immer mehr und hektischer (ab Level 5 Schweißtropfen, ab Level 7 jeder Stein). Ab

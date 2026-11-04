@@ -120,7 +120,9 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             @Override public void onBump() { sound.bump(); }
             @Override public void onLand() { sound.land(); }
             @Override public void onLevelUp(int level) { sound.levelUp(); }
-            @Override public void onTalk(String text) { sound.talk(text); }
+            @Override public void onTalk(String text) { if (!text.startsWith("IIII")) sound.talk(text); }
+            @Override public void onScream() { sound.scream(); }
+            @Override public void onStartle() { sound.startle(); }
             @Override public void onCrumble(float x, float y, float size, int color) { helper.addPiece(x, y, size, color); }
         });
         continueButton = findViewById(R.id.continue_button);
