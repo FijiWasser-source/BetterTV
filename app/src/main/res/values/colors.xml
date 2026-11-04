@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Farbschema "Polarnacht". Die Markenfarbe lebt im Inhalt (Hintergrund);
-         Bedienelemente bleiben neutral, Akzent nur für die Hauptaktion und Status. -->
-    <color name="bg">#070A18</color>
-    <color name="aurora_indigo">#3B3FBF</color>
-    <color name="aurora_teal">#0E8C84</color>
-    <color name="aurora_violet">#7A3FD1</color>
+    <!-- Farbschema "Midnight", angelehnt an Apples Gerätefarbe: tiefes Schwarzblau.
+         Die Stimmung trägt das Hintergrundbild (Inhaltsebene); Bedienelemente bleiben neutral,
+         Akzent nur für die Hauptaktion und Status. -->
+    <color name="bg">#0B1017</color>
+    <color name="midnight">#2E3642</color>
+    <color name="midnight_deep">#171D27</color>
+    <color name="midnight_glow">#2B4A73</color>
 
-    <color name="surface">#161B30</color>
+    <color name="surface">#1C2430</color>
     <color name="text">#FFFFFF</color>
-    <color name="text_content_secondary">#B4BAD6</color>
+    <color name="text_content_secondary">#AEB8C7</color>
     <color name="accent">#0A84FF</color>
 
-    <!-- Füllungen auf Glas (kein Glas auf Glas) -->
     <color name="glass_fill">#26FFFFFF</color>
     <color name="focus">#FFFFFF</color>
     <color name="on_focus">#000000</color>

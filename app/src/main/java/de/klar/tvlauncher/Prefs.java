@@ -51,6 +51,14 @@ final class Prefs {
         return true;
     }
 
+    Set<String> knownDefaults() {
+        return new HashSet<>(sp.getStringSet("known_defaults", new HashSet<>()));
+    }
+
+    void setKnownDefaults(Set<String> keys) {
+        sp.edit().putStringSet("known_defaults", new HashSet<>(keys)).apply();
+    }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }

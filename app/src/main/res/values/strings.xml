@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Klar</string>
-    <string name="hint">Tipp: OK gedrückt halten für Optionen · Einstellungen oben rechts</string>
+    <string name="hint">Tipp: OK gedrückt halten, um Apps im Dock zu ordnen</string>
+    <string name="all_apps">Alle Apps</string>
+    <string name="apps_hint">OK gedrückt halten: zum Start hinzufügen oder ausblenden</string>
+    <string name="dock_empty">Apps über „Alle Apps“ hinzufügen</string>
     <string name="settings">Einstellungen</string>
     <string name="weather_loading">Wetter wird geladen …</string>
     <string name="weather_off">Wetter: Ort in den Einstellungen wählen</string>

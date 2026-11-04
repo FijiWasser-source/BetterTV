@@ -23,19 +23,33 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     interface Listener {
         void onOpen(AppEntry entry);
         void onMenu(AppEntry entry);
+        default void onFocus(AppEntry entry) {}
     }
 
-    private static final int SURFACE = Color.rgb(0x16, 0x1B, 0x30);
-    private static final float FOCUS_SCALE = 1.12f;
-
+    private static final int SURFACE = Color.rgb(0x1C, 0x24, 0x30);
     private final Listener listener;
+    private final int layoutRes;
+    private final float focusScale;
+    private final boolean tintIconTiles;
     private final Map<String, Integer> colors = new HashMap<>();
     private final DecelerateInterpolator ease = new DecelerateInterpolator(2f);
     private List<AppEntry> items = new ArrayList<>();
     private float density = 1f;
 
+    /** Raster ("Alle Apps"): feste Kacheln der Inhaltsebene. */
     TileAdapter(Listener listener) {
+        this(listener, R.layout.item_tile, 1.12f, true);
+    }
+
+    /**
+     * @param tintIconTiles Kacheln ohne Banner in App-Farbe einfärben (nur im Raster;
+     *                      im Glas-Dock bleiben sie neutrale Füllungen)
+     */
+    TileAdapter(Listener listener, int layoutRes, float focusScale, boolean tintIconTiles) {
         this.listener = listener;
+        this.layoutRes = layoutRes;
+        this.focusScale = focusScale;
+        this.tintIconTiles = tintIconTiles;
     }
 
     void submit(List<AppEntry> entries) {
@@ -62,7 +76,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     @Override
     public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         density = parent.getResources().getDisplayMetrics().density;
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_tile, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(layoutRes, parent, false);
         return new Holder(v);
     }
 
@@ -72,7 +86,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         int color = colorOf(e);
         h.card.setTag(e.key);
         h.card.setContentDescription(e.label);
-        h.label.setText(e.label);
+        if (h.label != null) h.label.setText(e.label);
         h.card.setClipToOutline(true);
 
         if (e.banner != null) {
@@ -85,9 +99,11 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             h.icon.setVisibility(View.VISIBLE);
             h.icon.setImageDrawable(e.icon);
             // Inhaltsebene: ruhige Fläche im Farbschema, nur leicht in Richtung App-Farbe
-            h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));
+            if (tintIconTiles) {
+                h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));
+            }
         }
-        h.pin.setVisibility(e.pinned ? View.VISIBLE : View.GONE);
+        if (h.pin != null) h.pin.setVisibility(e.pinned ? View.VISIBLE : View.GONE);
         applyFocus(h, h.card.isFocused(), false);
 
         h.card.setOnClickListener(v -> {
@@ -107,21 +123,25 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         });
         h.card.setOnFocusChangeListener((v, focused) -> {
             applyFocus(h, focused, true);
+            if (focused) listener.onFocus(e);
         });
     }
 
     private void applyFocus(Holder h, boolean focused, boolean animate) {
-        float scale = focused ? FOCUS_SCALE : 1f;
-        float lift = focused ? 22f * density : 0f;
+        float scale = focused ? focusScale : 1f;
+        float lift = focused ? 18f * density : 0f;
         float alpha = focused ? 1f : 0f;
         if (animate) {
             h.card.animate().scaleX(scale).scaleY(scale).translationZ(lift)
                     .setInterpolator(ease).setDuration(180).start();
-            h.label.animate().alpha(alpha).translationY(focused ? 4f * density : 0f).setDuration(180).start();
+            if (h.label != null) {
+                h.label.animate().alpha(alpha).translationY(focused ? 4f * density : 0f).setDuration(180).start();
+            }
             h.sheen.animate().alpha(alpha).setDuration(180).start();
         } else {
             h.card.setScaleX(scale); h.card.setScaleY(scale); h.card.setTranslationZ(lift);
-            h.label.setAlpha(alpha); h.sheen.setAlpha(alpha);
+            if (h.label != null) h.label.setAlpha(alpha);
+            h.sheen.setAlpha(alpha);
         }
     }
 

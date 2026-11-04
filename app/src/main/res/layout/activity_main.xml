@@ -1,137 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ebenen von hinten nach vorn: Hintergrund (Inhalt) · Kacheln (Inhalt) · Glasleiste (Bedienung) -->
+<!-- Startansicht. Ebenen: Hintergrundbild (Inhalt) · Uhr/Wetter (Inhalt) · Glas-Dock (Bedienung) -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:clipChildren="false">
 
-    <LinearLayout
+    <ImageView
+        android:id="@+id/wallpaper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:orientation="vertical"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:background="@drawable/scrim_top" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/scrim_bottom" />
+
+    <!-- Uhr und Wetter direkt auf dem Bild -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
         android:paddingStart="72dp"
-        android:paddingTop="40dp"
+        android:paddingTop="44dp"
         android:paddingEnd="72dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:clipChildren="false"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <!-- Inhalt: Uhr und Datum direkt auf dem Hintergrund -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+            <TextClock
+                android:id="@+id/clock"
+                style="@style/OnImage"
+                android:fontFamily="sans-serif-light"
+                android:format12Hour="HH:mm"
+                android:format24Hour="HH:mm"
+                android:includeFontPadding="false"
+                android:letterSpacing="-0.02"
+                android:textSize="84sp" />
 
-                <TextClock
-                    android:id="@+id/clock"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-light"
-                    android:format12Hour="HH:mm"
-                    android:format24Hour="HH:mm"
-                    android:includeFontPadding="false"
-                    android:letterSpacing="-0.02"
-                    android:textColor="@color/text"
-                    android:textSize="72sp" />
-
-                <TextClock
-                    android:id="@+id/date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:format12Hour="EEEE, d. MMMM"
-                    android:format24Hour="EEEE, d. MMMM"
-                    android:textColor="@color/text_content_secondary"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <!-- Bedienebene: schwebende Glas-Kapsel mit Wetter und Einstellungen -->
-            <de.klar.tvlauncher.GlassLayout
-                android:id="@+id/glass_bar"
-                android:layout_width="wrap_content"
-                android:layout_height="60dp"
-                android:elevation="10dp"
-                android:paddingStart="24dp"
-                android:paddingEnd="8dp"
-                app:glassDim="0.28">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <!-- Text auf Glas: immer reinweiß, Hierarchie über Größe/Stärke -->
-                    <TextView
-                        android:id="@+id/weather_temp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="@color/text"
-                        android:textSize="22sp" />
-
-                    <TextView
-                        android:id="@+id/weather_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:text="@string/weather_loading"
-                        android:textColor="@color/text"
-                        android:textSize="16sp" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
-                        android:layout_marginStart="18dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="#40FFFFFF" />
-
-                    <!-- Kreis, konzentrisch zur Kapsel: (60dp - 2×8dp) = 44dp -->
-                    <FrameLayout
-                        android:id="@+id/settings_button"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bar_button"
-                        android:contentDescription="@string/settings"
-                        android:focusable="true"
-                        android:focusableInTouchMode="true">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:duplicateParentState="true"
-                            android:importantForAccessibility="no"
-                            android:src="@drawable/ic_settings"
-                            android:tint="@color/bar_icon_tint" />
-                    </FrameLayout>
-                </LinearLayout>
-            </de.klar.tvlauncher.GlassLayout>
+            <TextClock
+                android:id="@+id/date"
+                style="@style/OnImage"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:format12Hour="EEEE, d. MMMM"
+                android:format24Hour="EEEE, d. MMMM"
+                android:textSize="20sp" />
         </LinearLayout>
 
-        <!-- Inhalt: App-Kacheln (feste Flächen, kein Glas) -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/grid"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginStart="-14dp"
-            android:layout_marginTop="36dp"
-            android:layout_marginEnd="-14dp"
-            android:layout_weight="1"
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/weather_temp"
+                style="@style/OnImage"
+                android:fontFamily="sans-serif-light"
+                android:includeFontPadding="false"
+                android:textSize="56sp" />
+
+            <TextView
+                android:id="@+id/weather_text"
+                style="@style/OnImage"
+                android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/weather_loading"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Unten: Name der gewählten App, darunter das Glas-Dock -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingBottom="44dp">
+
+        <TextView
+            android:id="@+id/dock_label"
+            style="@style/OnImage"
+            android:layout_marginBottom="14dp"
+            android:fontFamily="sans-serif-medium"
+            android:textSize="20sp" />
+
+        <!-- Bedienebene: ein Glas für alles, was darin liegt (kein Glas auf Glas) -->
+        <de.klar.tvlauncher.GlassLayout
+            android:id="@+id/dock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:paddingTop="12dp"
-            android:paddingBottom="48dp" />
+            android:elevation="16dp"
+            android:padding="12dp"
+            app:glassDim="0.22"
+            app:glassRadius="30dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/dock_list"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never" />
+
+                <TextView
+                    android:id="@+id/dock_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:gravity="center"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/dock_empty"
+                    android:textColor="@color/text"
+                    android:textSize="16sp"
+                    android:visibility="gone" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="14dp"
+                    android:background="#4DFFFFFF" />
+
+                <FrameLayout
+                    android:id="@+id/all_apps_button"
+                    style="@style/DockButton"
+                    android:contentDescription="@string/all_apps">
+
+                    <ImageView style="@style/DockButtonIcon" android:src="@drawable/ic_apps" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/settings_button"
+                    style="@style/DockButton"
+                    android:layout_marginStart="12dp"
+                    android:contentDescription="@string/settings">
+
+                    <ImageView style="@style/DockButtonIcon" android:src="@drawable/ic_settings" />
+                </FrameLayout>
+            </LinearLayout>
+        </de.klar.tvlauncher.GlassLayout>
     </LinearLayout>
 </FrameLayout>

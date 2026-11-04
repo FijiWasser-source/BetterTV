@@ -1,9 +1,7 @@
 package de.klar.tvlauncher;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,21 +12,26 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Startansicht: Hintergrundbild, Uhr, Wetter und ein Glas-Dock mit den wichtigsten Apps,
+ * dazu "Alle Apps" und "Einstellungen". Alles andere bleibt aus dem Blick.
+ */
 public class MainActivity extends Activity implements TileAdapter.Listener {
 
-    private static final int COLUMNS = 5;
     private static final long WEATHER_REFRESH_MS = 30 * 60 * 1000L;
 
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -42,7 +45,9 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
 
     private Prefs prefs;
     private TileAdapter adapter;
-    private RecyclerView grid;
+    private RecyclerView dockList;
+    private TextView dockLabel;
+    private TextView dockEmpty;
     private TextView weatherTemp;
     private TextView weatherText;
     private String focusKey;
@@ -54,24 +59,42 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         prefs = new Prefs(this);
         weatherTemp = findViewById(R.id.weather_temp);
         weatherText = findViewById(R.id.weather_text);
-        findViewById(R.id.settings_button).setOnClickListener(v -> showSettings());
-        View root = findViewById(R.id.root);
-        GlassLayout bar = findViewById(R.id.glass_bar);
-        root.post(() -> Chrome.install(root, bar));
+        dockLabel = findViewById(R.id.dock_label);
+        dockEmpty = findViewById(R.id.dock_empty);
 
-        grid = findViewById(R.id.grid);
-        grid.setLayoutManager(new GridLayoutManager(this, COLUMNS));
-        grid.setItemAnimator(null);
-        adapter = new TileAdapter(this);
-        grid.setAdapter(adapter);
+        View allApps = findViewById(R.id.all_apps_button);
+        View settings = findViewById(R.id.settings_button);
+        allApps.setOnClickListener(v -> startActivity(new Intent(this, AppsActivity.class)));
+        settings.setOnClickListener(v -> showSettings());
+        allApps.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.all_apps); });
+        settings.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.settings); });
+
+        dockList = findViewById(R.id.dock_list);
+        dockList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        dockList.setItemAnimator(null);
+        adapter = new TileAdapter(this, R.layout.item_dock, 1.15f, false);
+        dockList.setAdapter(adapter);
+
+        View root = findViewById(R.id.root);
+        root.post(this::applyWallpaper);
 
         if (prefs.firstRun()) Toast.makeText(this, R.string.hint, Toast.LENGTH_LONG).show();
+    }
+
+    private void applyWallpaper() {
+        View root = findViewById(R.id.root);
+        if (root.getWidth() == 0) return;
+        Wallpaper.Images img = Wallpaper.load(this, root.getWidth(), root.getHeight());
+        ((ImageView) findViewById(R.id.wallpaper)).setImageBitmap(img.full);
+        ((GlassLayout) findViewById(R.id.dock)).setBackdrop(img.blurred,
+                (float) root.getWidth() / img.blurred.getWidth());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        reloadApps();
+        reloadDock();
+        findViewById(R.id.root).post(this::applyWallpaper); // falls ein neues Bild abgelegt wurde
         main.removeCallbacks(weatherTick);
         main.post(weatherTick);
     }
@@ -92,83 +115,52 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_UP) focusPosition(0);
+            if (event.getAction() == KeyEvent.ACTION_UP) { focusKey = null; focusDock(0); }
             return true;
         }
         return super.dispatchKeyEvent(event);
     }
 
-    // --- Apps ---------------------------------------------------------------
+    // --- Dock ---------------------------------------------------------------
 
-    private void reloadApps() {
+    private void reloadDock() {
         View focused = getCurrentFocus();
         if (focused != null && focused.getTag() instanceof String) focusKey = (String) focused.getTag();
-        adapter.submit(AppLoader.load(this, prefs));
-        int pos = focusKey == null ? 0 : Math.max(0, adapter.indexOf(focusKey));
-        focusPosition(pos);
+        List<AppEntry> dock = AppLoader.dock(AppLoader.load(this, prefs));
+        adapter.submit(dock);
+        dockEmpty.setVisibility(dock.isEmpty() ? View.VISIBLE : View.GONE);
+        dockList.setVisibility(dock.isEmpty() ? View.GONE : View.VISIBLE);
+        if (dock.isEmpty()) {
+            findViewById(R.id.all_apps_button).requestFocus();
+            return;
+        }
+        focusDock(focusKey == null ? 0 : Math.max(0, adapter.indexOf(focusKey)));
     }
 
-    private void focusPosition(int pos) {
+    private void focusDock(int pos) {
         if (adapter.getItemCount() == 0) return;
-        grid.scrollToPosition(pos);
-        grid.post(() -> {
-            RecyclerView.ViewHolder h = grid.findViewHolderForAdapterPosition(pos);
+        dockList.scrollToPosition(pos);
+        dockList.post(() -> {
+            RecyclerView.ViewHolder h = dockList.findViewHolderForAdapterPosition(pos);
             if (h != null) h.itemView.findViewById(R.id.card).requestFocus();
         });
     }
 
     @Override
+    public void onFocus(AppEntry entry) {
+        dockLabel.setText(entry.label);
+    }
+
+    @Override
     public void onOpen(AppEntry entry) {
         focusKey = entry.key;
-        try {
-            startActivity(entry.launchIntent);
-        } catch (ActivityNotFoundException | SecurityException e) {
-            Toast.makeText(this, "App lässt sich nicht starten", Toast.LENGTH_SHORT).show();
-        }
+        AppMenu.open(this, entry);
     }
 
     @Override
     public void onMenu(AppEntry entry) {
         focusKey = entry.key;
-        Sheet sheet = new Sheet(this, entry.label);
-        if (entry.pinned) {
-            sheet.button("Lösen", () -> setPinned(entry.key, false))
-                 .button("Nach vorne", () -> movePin(entry.key, -1))
-                 .button("Nach hinten", () -> movePin(entry.key, 1));
-        } else {
-            sheet.button("Oben anheften", () -> setPinned(entry.key, true));
-        }
-        sheet.button("Ausblenden", () -> hide(entry.key))
-             .button("App-Info", () -> openAppInfo(entry.packageName))
-             .button("Abbrechen", null)
-             .show();
-    }
-
-    private void setPinned(String key, boolean pin) {
-        List<String> pinned = prefs.pinned();
-        pinned.remove(key);
-        if (pin) pinned.add(key);
-        prefs.setPinned(pinned);
-        reloadApps();
-    }
-
-    private void movePin(String key, int delta) {
-        prefs.setPinned(AppOrder.move(prefs.pinned(), key, delta));
-        reloadApps();
-    }
-
-    private void hide(String key) {
-        Set<String> hidden = prefs.hidden();
-        hidden.add(key);
-        prefs.setHidden(hidden);
-        List<String> pinned = prefs.pinned();
-        if (pinned.remove(key)) prefs.setPinned(pinned);
-        focusKey = null;
-        reloadApps();
-    }
-
-    private void openAppInfo(String pkg) {
-        tryStart(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg)));
+        AppMenu.show(this, prefs, entry, this::reloadDock);
     }
 
     // --- Einstellungen ------------------------------------------------------
@@ -177,10 +169,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
         new Sheet(this, getString(R.string.settings))
                 .button("Wetter-Ort: " + city, this::askCity)
+                .button("Hintergrundbild", this::showWallpaperInfo)
                 .button("Ausgeblendete Apps (" + prefs.hidden().size() + ")", this::showHidden)
-                .button("Android-Einstellungen", () -> tryStart(new Intent(Settings.ACTION_SETTINGS)))
+                .button("Android-Einstellungen", () -> AppMenu.tryStart(this, new Intent(Settings.ACTION_SETTINGS)))
                 .button("Standard-Startbildschirm", () -> {
-                    if (!tryStart(new Intent(Settings.ACTION_HOME_SETTINGS))) {
+                    if (!AppMenu.tryStart(this, new Intent(Settings.ACTION_HOME_SETTINGS))) {
                         Toast.makeText(this, "Auf diesem Gerät per Einrichtungs-Skript (siehe Anleitung)",
                                 Toast.LENGTH_LONG).show();
                     }
@@ -203,10 +196,20 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 Set<String> h = prefs.hidden();
                 h.remove(key);
                 prefs.setHidden(h);
-                reloadApps();
+                reloadDock();
             });
         }
         sheet.button("Abbrechen", null).show();
+    }
+
+    private void showWallpaperInfo() {
+        File f = Wallpaper.customFile(this);
+        String path = f != null ? f.getAbsolutePath().replace("/storage/emulated/0", "/sdcard") : "?";
+        new Sheet(this, "Hintergrundbild")
+                .message("Eigenes Bild (JPG oder PNG, am besten 1920 × 1080) vom Computer aus ablegen:\n\n"
+                        + "adb push bild.jpg " + path + "\n\nDanach einmal Home drücken.")
+                .button("Fertig", null)
+                .show();
     }
 
     private void askCity() {
@@ -281,15 +284,6 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 });
             }
         });
-    }
-
-    private boolean tryStart(Intent intent) {
-        try {
-            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            return true;
-        } catch (ActivityNotFoundException | SecurityException e) {
-            return false;
-        }
     }
 
     @SuppressWarnings("deprecation") // Context#getColor gibt es erst ab Android 6

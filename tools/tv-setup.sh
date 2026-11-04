@@ -9,11 +9,12 @@
 #   ./tools/tv-setup.sh <TV-IP> dns-off            Privates DNS zurücksetzen
 #   ./tools/tv-setup.sh <TV-IP> home               Original-Startseite deaktivieren -> Klar wird Home
 #   ./tools/tv-setup.sh <TV-IP> restore            Original-Startseite wieder aktivieren
+#   ./tools/tv-setup.sh <TV-IP> wallpaper <bild>   Hintergrundbild der Startansicht setzen
 #   ./tools/tv-setup.sh <TV-IP> status             Aktuellen Zustand anzeigen
 set -euo pipefail
 
 IP="${1:-}"; CMD="${2:-}"
-if [[ -z "$IP" || -z "$CMD" ]]; then sed -n '2,14p' "$0"; exit 1; fi
+if [[ -z "$IP" || -z "$CMD" ]]; then sed -n '2,15p' "$0"; exit 1; fi
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 if [[ "$IP" == "auto" ]]; then
@@ -73,6 +74,17 @@ TXT
     for p in "${STOCK_LAUNCHERS[@]}" "${STOCK_HELPERS[@]}"; do
       if installed "$p"; then "${A[@]}" shell pm enable "$p" >/dev/null && echo "aktiviert: $p"; fi
     done
+    ;;
+  wallpaper)
+    IMG="${3:-}"
+    [[ -f "$IMG" ]] || { echo "Bilddatei fehlt: $0 $IP wallpaper ~/Downloads/bild.jpg"; exit 1; }
+    EXT="${IMG##*.}"; EXT="$(echo "$EXT" | tr 'A-Z' 'a-z')"; [[ "$EXT" == "png" ]] || EXT="jpg"
+    DIR=/sdcard/Android/data/de.klar.tvlauncher/files
+    "${A[@]}" shell mkdir -p "$DIR"
+    "${A[@]}" shell rm -f "$DIR/hintergrund.jpg" "$DIR/hintergrund.jpeg" "$DIR/hintergrund.png"
+    "${A[@]}" push "$IMG" "$DIR/hintergrund.$EXT"
+    "${A[@]}" shell input keyevent KEYCODE_HOME
+    echo "Hintergrund gesetzt."
     ;;
   status)
     echo "Gerät: $("${A[@]}" shell getprop ro.product.model | tr -d '\r')  (Android-SDK $SDK)"

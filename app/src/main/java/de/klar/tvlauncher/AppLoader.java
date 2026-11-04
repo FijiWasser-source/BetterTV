@@ -33,6 +33,11 @@ final class AppLoader {
             labels.put(e.getKey(), e.getValue().loadLabel(pm).toString());
         }
 
+        // Standard-Apps (Netflix, YouTube, …) einmalig ins Dock setzen, sofern installiert
+        Favorites.Result seeded = Favorites.seed(prefs.pinned(), prefs.knownDefaults(), labels.keySet());
+        prefs.setPinned(seeded.pinned);
+        prefs.setKnownDefaults(seeded.known);
+
         List<String> pinned = prefs.pinned();
         Set<String> hidden = prefs.hidden();
         List<AppEntry> result = new ArrayList<>();
@@ -50,6 +55,13 @@ final class AppLoader {
                     info.loadIcon(pm), launch, pinned.contains(key)));
         }
         return result;
+    }
+
+    /** Nur die Apps fürs Dock, in Dock-Reihenfolge. */
+    static List<AppEntry> dock(List<AppEntry> all) {
+        List<AppEntry> dock = new ArrayList<>();
+        for (AppEntry e : all) if (e.pinned) dock.add(e);
+        return dock;
     }
 
     /** Alle installierten App-Namen (auch ausgeblendete), für den Einstellungsdialog. */

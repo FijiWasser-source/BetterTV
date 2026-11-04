@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Text direkt auf dem Hintergrundbild: weiß mit weichem Schatten -->
+    <style name="OnImage">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:shadowColor">#80000000</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">12</item>
+    </style>
+
+    <!-- Runde Taste im Dock, Höhe wie die Kacheln -->
+    <style name="DockButton">
+        <item name="android:layout_width">50dp</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:background">@drawable/dock_button</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
+    <style name="DockButtonIcon">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:duplicateParentState">true</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:tint">@color/bar_icon_tint</item>
+    </style>
+</resources>

@@ -9,7 +9,7 @@ import android.graphics.Shader;
 import android.view.View;
 
 /**
- * Hintergrund "Polarnacht" (Inhaltsebene) und Hilfen für das Glas:
+ * Ersatz-Hintergrund "Midnight" (Inhaltsebene, falls kein eigenes Bild abgelegt ist) und Hilfen für das Glas:
  * Rendern, Bildschirmfoto, Weichzeichnen. Alles läuft einmalig, nicht pro Bild –
  * wichtig für ältere Fernseher wie den BRAVIA von 2016.
  */
@@ -25,9 +25,9 @@ final class Aurora {
         Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
         canvas.drawColor(color(c, R.color.bg));
-        blob(canvas, w * 0.18f, h * 0.05f, w * 0.55f, color(c, R.color.aurora_indigo), 0.85f);
-        blob(canvas, w * 0.92f, h * 0.30f, w * 0.45f, color(c, R.color.aurora_teal), 0.70f);
-        blob(canvas, w * 0.45f, h * 1.10f, w * 0.60f, color(c, R.color.aurora_violet), 0.45f);
+        blob(canvas, w * 0.75f, h * 0.15f, w * 0.60f, color(c, R.color.midnight_glow), 0.55f);
+        blob(canvas, w * 0.15f, h * 0.95f, w * 0.65f, color(c, R.color.midnight), 0.60f);
+        blob(canvas, w * 0.50f, h * 0.45f, w * 0.50f, color(c, R.color.midnight_deep), 0.40f);
         return bmp;
     }
 

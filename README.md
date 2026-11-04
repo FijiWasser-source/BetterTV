@@ -1,27 +1,53 @@
 # Klar – werbefreie Startseite für Android TV / Google TV
 
-Ein ruhiger, schlichter Startbildschirm statt der Android-TV-Oberfläche mit
-Empfehlungs- und Werbezeilen – gestaltet nach Apples Liquid-Glass-Richtlinien (HIG), im
-Farbschema **„Polarnacht“** (Nachtblau mit Polarlicht in Indigo, Petrol und Violett).
+Eine ruhige Startansicht statt der Android-TV-Oberfläche mit Empfehlungs- und Werbezeilen:
+**dein Hintergrundbild, Uhrzeit, Wetter und ein Glas-Dock** mit den wichtigsten Apps
+(Netflix, YouTube, Prime Video, Play Store, Arte, HBO Max, Disney+ – sofern installiert).
+Am Ende des Docks: **Alle Apps** und **Einstellungen**. Alles andere bleibt aus dem Blick.
+
+Gestaltet nach Apples Liquid-Glass-Richtlinien im Farbschema **Midnight** (tiefes Schwarzblau):
 
 | Ebene | Elemente | Gestaltung |
 |---|---|---|
-| Bedienebene | Leiste oben rechts (Wetter, Einstellungen), Menüs | Glas: weichgezeichneter, leicht vergrößerter Hintergrund, Glanzlicht, helle Innen- und dunkle Außenkante |
-| Inhalt | Hintergrund, Uhr, App-Kacheln | Kein Glas: feste Flächen, das Farbschema lebt hier |
+| Bedienebene | Dock, Menüs | Glas: weichgezeichneter, leicht vergrößerter Hintergrund, Glanzlicht, helle Innen- und dunkle Außenkante |
+| Inhalt | Hintergrundbild, Uhr, Wetter, Kacheln in „Alle Apps“ | Kein Glas |
 
-- Kein Glas auf Glas: Schaltflächen auf Glas sind Füllungen; die fokussierte wird weiß.
-- Text auf Glas ist reinweiß, Hierarchie über Größe und Stärke.
-- Akzentfarbe (Systemblau) nur für die Hauptaktion (z. B. „Speichern“) und den Punkt für angeheftete Apps.
-- Konzentrische Ecken: Menü 28 dp − 16 dp Abstand = 12 dp Schaltflächen; Kapsel 60 dp → 44 dp Kreis.
+- Kein Glas auf Glas: Kacheln und Tasten im Dock sind Füllungen; die fokussierte Taste wird weiß.
+- Text auf Glas ist reinweiß; Akzentfarbe (Systemblau) nur für Hauptaktionen und den Punkt „im Dock“.
+- Konzentrische Ecken: Dock 30 dp − 12 dp Abstand = 18 dp Kacheln; Menü 28 − 16 = 12 dp.
 
-![Startseite](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_home_home.png)
-![Menü](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_menu_menu.png)
+![Startansicht](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_home_home.png)
+![Alle Apps](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_allApps_apps.png)
 
-*Vorschau mit Platzhalter-Bannern; auf dem TV erscheinen die echten Banner der Apps.*
+*Vorschau mit Platzhaltern für Hintergrund und App-Banner.*
 
 **Hinweis:** Echtes Liquid Glass (Lichtbrechung in Echtzeit) gibt es nur auf Apple-Geräten.
-Klar bildet es nach: Die Unschärfe wird einmalig berechnet (beim Start bzw. beim Öffnen eines
-Menüs), damit es auch auf älteren Fernsehern flüssig bleibt.
+Klar bildet es nach; die Unschärfe wird einmalig berechnet, damit es auch auf älteren
+Fernsehern flüssig bleibt.
+
+## Bedienung
+
+| Wo | Taste | Funktion |
+|---|---|---|
+| Startansicht | ◀ ▶ | durch das Dock |
+| | OK | App öffnen |
+| | OK gedrückt halten | Vom Start entfernen · Nach links/rechts · Ausblenden · App-Info |
+| | Zurück | zur ersten App im Dock |
+| Alle Apps | OK gedrückt halten | Zum Start hinzufügen · Ausblenden · App-Info |
+| | Zurück | zur Startansicht |
+| überall | Home | Startansicht |
+
+## Eigenes Hintergrundbild
+
+JPG oder PNG, am besten 1920 × 1080. Andere Formate werden mittig zugeschnitten.
+
+```bash
+./tools/tv-setup.sh auto wallpaper ~/Downloads/bild.jpg
+# oder direkt mit adb:
+adb push bild.jpg /sdcard/Android/data/de.klar.tvlauncher/files/hintergrund.jpg
+```
+
+Ohne eigenes Bild zeigt Klar einen dunklen Midnight-Verlauf.
 
 Läuft ab Android 5, also auch auf dem **Sony BRAVIA KD-65XD7505** (Android TV 6/7)
 und auf neueren Google-TV-Geräten.
@@ -70,7 +96,7 @@ Modell und ob ADB erreichbar ist. In allen Befehlen unten kann statt der IP auch
 ./tools/tv-setup.sh auto status            # Kontrolle
 ```
 
-Danach in Klar die Kachel **Einstellungen → Wetter-Ort** setzen.
+Danach in Klar im Dock **Einstellungen (Zahnrad) → Wetter-Ort** setzen.
 
 **Alles rückgängig machen:**
 
@@ -134,7 +160,8 @@ cd tv-launcher
 ./gradlew assembleDebug
 ```
 
-Aufbau: `MainActivity` (Oberfläche & Dialoge), `AppLoader` (installierte Apps), `AppOrder`
+Aufbau: `MainActivity` (Startansicht mit Dock & Einstellungen), `AppLoader` (installierte Apps), `AppOrder`
 (Sortierlogik, getestet), `Weather` (Open-Meteo), `Prefs` (lokale Einstellungen),
-`Sheet` (Glas-Menüs), `GlassLayout` (Glas-Material), `Aurora` (Hintergrund + Weichzeichner),
-`Chrome` (verbindet beides), `Tint` (App-Farbe für Kacheln).
+`AppsActivity` („Alle Apps“), `AppMenu` (gemeinsame App-Aktionen), `Favorites` (Standard-Dock, getestet),
+`Wallpaper` (Hintergrundbild), `Sheet` (Glas-Menüs), `GlassLayout` (Glas-Material),
+`Aurora` (Ersatz-Hintergrund + Weichzeichner), `Tint` (App-Farbe für Kacheln).

@@ -109,12 +109,12 @@ public class GlassLayout extends FrameLayout {
             matrix.postScale(LENS_ZOOM, LENS_ZOOM, getWidth() / 2f, getHeight() / 2f);
             backdropPaint.getShader().setLocalMatrix(matrix);
             canvas.drawRoundRect(rect, r, r, backdropPaint);
-            fill.setColor(Math.round(dim * 255) << 24);
+            fill.setColor((Math.round(dim * 255) << 24) | 0x0B1017);
             canvas.drawRoundRect(rect, r, r, fill);
             fill.setColor(0x14FFFFFF);
             canvas.drawRoundRect(rect, r, r, fill);
         } else {
-            fill.setColor(0xE61A1F36);
+            fill.setColor(0xE61C2430);
             canvas.drawRoundRect(rect, r, r, fill);
         }
         canvas.drawRoundRect(rect, r, r, sheen);
