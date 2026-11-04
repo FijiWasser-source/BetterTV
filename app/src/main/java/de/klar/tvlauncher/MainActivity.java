@@ -57,6 +57,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private PixelText pixelClock, pixelDate, pixelWeather;
     private View continueButton;
     private Mascot mascot;
+    private SoundFx sound;
     private TextView continueLabel;
     private final Runnable clockTick = new Runnable() {
         @Override public void run() {
@@ -110,11 +111,17 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         pixelDate = findViewById(R.id.pixel_date);
         pixelWeather = findViewById(R.id.pixel_weather);
         mascot = findViewById(R.id.mascot);
+        sound = new SoundFx(this);
+        sound.setEnabled(prefs.soundOn());
+        mascot.setEvents(new Mascot.Events() {
+            @Override public void onJump() { sound.jump(); }
+            @Override public void onStar() { sound.star(); }
+            @Override public void onBump() { sound.bump(); }
+        });
         continueButton = findViewById(R.id.continue_button);
         continueLabel = findViewById(R.id.continue_label);
         continueLabel.setTypeface(Fonts.rounded(this));
-        float d = getResources().getDisplayMetrics().density;
-        continueButton.setBackground(new AbendTile(d, -1));
+        applyPillStyle();
         continueButton.setOnFocusChangeListener((v, f) -> AbendTile.focus(v, f));
         continueButton.setOnClickListener(v -> {
             for (AppEntry e : AppLoader.load(this, prefs)) {
@@ -124,6 +131,15 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         adapter = new TileAdapter(this, R.layout.item_tile_abend, 1.06f, false, true);
         adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
+    }
+
+    /** "Weiter mit"-Knopf im Stil der Kacheln (bei Glas-Symbolen nur Umrandung). */
+    private void applyPillStyle() {
+        float d = getResources().getDisplayMetrics().density;
+        boolean glass = IconStyle.isGlass(prefs.iconStyle());
+        continueButton.setBackground(new AbendTile(d, -1, glass));
+        continueLabel.setTextColor(glass ? 0xFFFFFFFF : AbendTile.INK);
+        ((TextView) findViewById(R.id.continue_caption)).setTextColor(glass ? 0xFFA9ADB5 : AbendTile.INK_SOFT);
     }
 
     /** Begrüßung je nach Tageszeit, zweite Zeile mit orangem Schlusswort. */
@@ -146,6 +162,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         pixelClock.tick();
         pixelDate.setText(new java.text.SimpleDateFormat("EEEE, d. MMMM", java.util.Locale.GERMAN).format(now.getTime()));
         greeting.setText(greetingFor(now.get(java.util.Calendar.HOUR_OF_DAY)));
+        if (sound != null && now.get(java.util.Calendar.SECOND) == 0) sound.startMusic(mascot.isSleeping());
     }
 
     private void applyWallpaper() {
@@ -172,6 +189,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         main.post(weatherTick);
         main.removeCallbacks(clockTick);
         if (abend) main.post(clockTick);
+        if (sound != null) sound.startMusic(mascot.isSleeping());
     }
 
     @Override
@@ -179,12 +197,14 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         super.onPause();
         main.removeCallbacks(weatherTick);
         main.removeCallbacks(clockTick);
+        if (sound != null) sound.pauseMusic(); // Netflix & Co. bekommen Ruhe
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         io.shutdownNow();
+        if (sound != null) sound.release();
     }
 
     /** Zurück bleibt auf der Startseite; Zifferntasten 1–9 starten die Apps im Dock. */
@@ -295,9 +315,17 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                     prefs.setDesign(abend ? "glas" : "abend");
                     recreate();
                 })
+                .button("Musik & Sounds: " + (prefs.soundOn() ? "an" : "aus") + " – wechseln", () -> {
+                    prefs.setSoundOn(!prefs.soundOn());
+                    if (sound != null) {
+                        sound.setEnabled(prefs.soundOn());
+                        sound.startMusic(mascot != null && mascot.isSleeping());
+                    }
+                })
                 .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()) + " – wechseln", () -> {
                     prefs.setIconStyle(IconStyle.next(prefs.iconStyle()));
                     adapter.setIconStyle(prefs.iconStyle());
+                    if (abend) applyPillStyle();
                     Toast.makeText(this, "App-Symbole: " + IconStyle.label(prefs.iconStyle()), Toast.LENGTH_SHORT).show();
                 })
                 .button("Wetter-Ort: " + city, this::askCity)

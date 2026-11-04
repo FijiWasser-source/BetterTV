@@ -72,6 +72,10 @@ final class Prefs {
 
     void setIconStyle(String s) { sp.edit().putString("icon_style", s).apply(); }
 
+    boolean soundOn() { return sp.getBoolean("sound_on", true); }
+
+    void setSoundOn(boolean on) { sp.edit().putBoolean("sound_on", on).apply(); }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }

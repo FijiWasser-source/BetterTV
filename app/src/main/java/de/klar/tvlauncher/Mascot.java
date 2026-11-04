@@ -38,6 +38,19 @@ public class Mascot extends View {
 
     enum Emote { NONE, HEART, NOTE, STAR, BANG, QUESTION, SLEEP }
 
+    /** Für Soundeffekte. */
+    public interface Events {
+        void onJump();
+        void onStar();
+        void onBump();
+    }
+
+    private Events events;
+
+    public void setEvents(Events e) { events = e; }
+
+    public boolean isSleeping() { return night(); }
+
     private static final String[][] EMOTE_ICONS = {
             {},
             {".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."},
@@ -102,7 +115,12 @@ public class Mascot extends View {
     }
 
     /** Taste 0: Pixel springt selbst. */
-    public void jump() { if (!airborne && !night()) { vy = JUMP_V; airborne = true; } }
+    public void jump() {
+        if (!airborne && !night()) {
+            vy = JUMP_V; airborne = true;
+            if (events != null && forceNight == null) events.onJump();
+        }
+    }
 
     /** Kleine Freude, z. B. wenn eine App gestartet wird. */
     public void cheer() { jump(); showEmote(Emote.STAR); }
@@ -222,12 +240,14 @@ public class Mascot extends View {
                     th.gone = true;
                     stars++;
                     showEmote(stars % 10 == 0 ? Emote.HEART : Emote.STAR);
+                    if (events != null) events.onStar();
                 }
             } else if (!th.hit && feet < th.h() - 0.3f) {
                 th.hit = true; // pro Hindernis höchstens einmal stolpern
                 stumble = 0.9f;
                 stumbles++;
                 showEmote(Emote.BANG);
+                if (events != null) events.onBump();
                 vy = 14; airborne = true; // kleiner Hüpfer beim Stolpern
             }
         }

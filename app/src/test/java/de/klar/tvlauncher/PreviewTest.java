@@ -253,8 +253,12 @@ public class PreviewTest {
         View cont = root.findViewById(R.id.continue_button);
         cont.setVisibility(View.VISIBLE);
         float d = paparazzi.getContext().getResources().getDisplayMetrics().density;
-        cont.setBackground(new AbendTile(d, -1));
+        cont.setBackground(new AbendTile(d, -1, IconStyle.isGlass(style)));
         TextView cl = root.findViewById(R.id.continue_label);
+        if (IconStyle.isGlass(style)) {
+            cl.setTextColor(0xFFFFFFFF);
+            ((TextView) root.findViewById(R.id.continue_caption)).setTextColor(0xFFA9ADB5);
+        }
         cl.setTypeface(Fonts.rounded(paparazzi.getContext()));
         cl.setText("Netflix");
 

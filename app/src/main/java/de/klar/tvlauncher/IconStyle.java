@@ -83,10 +83,12 @@ final class IconStyle {
 
     private static int mix(int a, int b, float t) { return Math.round(a + (b - a) * t); }
 
+    static boolean isGlass(String style) { return GLASS.equals(style) || GLASS_ORANGE.equals(style); }
+
     /**
-     * Glas: ohne Hintergrund – nur das Logo wird zu Glas und sitzt direkt auf der Kachel.
-     * Blau: dunkel getöntes, durchscheinendes Glas (die Kachelfarbe schimmert durch).
-     * Orange: oranges Glas. Beide mit Lichtreflex oben und heller Glanzkante am Logo.
+     * Glas: ohne Hintergrund – nur das Logo wird zu Glas (blau oder orange, leicht
+     * durchscheinend) mit Lichtreflex oben und heller Glanzkante. Die Kachel selbst hat
+     * dann ebenfalls keinen Hintergrund, nur die leuchtende orange Umrandung.
      */
     private static void glass(int[] px, float[] lum, float lo, float range, int width, int height, boolean orange) {
         float[] t = new float[px.length];
@@ -96,9 +98,10 @@ final class IconStyle {
             v = Math.max(0, (v - 0.3f) / 0.7f);
             t[i] = v * v * (3 - 2 * v);
         }
-        int base = orange ? 0xF57A12 : 0x0B1430;      // Glasfarbe
-        int light = orange ? 0xFFD2A3 : 0xB9CEFF;     // Farbe des Lichtreflexes
-        float maxAlpha = orange ? 1f : 0.82f;
+        // Logo als Glas direkt auf dem dunklen Grund: hell getöntes Blau bzw. Orange
+        int base = orange ? 0xFF8A1F : 0x8FB4FF;      // Glasfarbe
+        int light = orange ? 0xFFE0BF : 0xE3ECFF;     // Farbe des Lichtreflexes
+        float maxAlpha = 0.9f;
         float highlightRows = height * 0.5f;
         for (int y = 0; y < height; y++) {
             float sheen = y < highlightRows ? 0.38f * (1 - y / highlightRows) : 0;

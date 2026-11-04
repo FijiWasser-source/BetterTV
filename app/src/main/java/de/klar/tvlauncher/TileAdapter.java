@@ -99,8 +99,11 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         AppEntry e = items.get(position);
         int color = colorOf(e);
         h.card.setTag(e.key);
-        if (abend && !(h.card.getBackground() instanceof AbendTile)) {
-            h.card.setBackground(new AbendTile(density, 16));
+        boolean outline = IconStyle.isGlass(iconStyle);
+        if (abend && !(h.card.getBackground() instanceof AbendTile
+                && ((AbendTile) h.card.getBackground()).outline == outline)) {
+            h.card.setBackground(new AbendTile(density, 16, outline));
+            if (h.label != null) h.label.setTextColor(outline ? 0xFFFFFFFF : AbendTile.INK);
         }
         if (h.number != null) {
             // Nummer = Taste auf der Fernbedienung (nur echte Apps, 1–9)
@@ -157,7 +160,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private void applyFocus(Holder h, boolean focused, boolean animate) {
         if (abend) {
             AbendTile.focus(h.card, focused);
-            if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : AbendTile.INK_SOFT);
+            boolean ol = h.card.getBackground() instanceof AbendTile && ((AbendTile) h.card.getBackground()).outline;
+            if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : ol ? 0xFFA9ADB5 : AbendTile.INK_SOFT);
             float s = focused ? focusScale : 1f;
             if (animate) h.card.animate().scaleX(s).scaleY(s).setInterpolator(ease).setDuration(160).start();
             else { h.card.setScaleX(s); h.card.setScaleY(s); }

@@ -30,8 +30,13 @@ final class AbendTile extends Drawable {
     private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private boolean focused;
+    /** Nur Umrandung: kein Hintergrund, leuchtender oranger Rand (für die Glas-Symbole). */
+    final boolean outline;
 
-    AbendTile(float density, float radiusDp) {
+    AbendTile(float density, float radiusDp) { this(density, radiusDp, false); }
+
+    AbendTile(float density, float radiusDp, boolean outline) {
+        this.outline = outline;
         this.density = density;
         this.radius = radiusDp < 0 ? -1 : radiusDp * density;
         rim.setStyle(Paint.Style.STROKE);
@@ -44,8 +49,10 @@ final class AbendTile extends Drawable {
     /** Für das Leuchten braucht Android vor Version 9 eine Software-Ebene – nur solange fokussiert. */
     static void focus(View card, boolean f) {
         if (card.getBackground() instanceof AbendTile) {
-            ((AbendTile) card.getBackground()).setFocused(f);
-            card.setLayerType(f ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_NONE, null);
+            AbendTile t = (AbendTile) card.getBackground();
+            t.setFocused(f);
+            // Umrandungs-Variante leuchtet ohne Software-Ebene (weiche Linien statt Schatten)
+            card.setLayerType(f && !t.outline ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_NONE, null);
         }
     }
 
@@ -63,6 +70,7 @@ final class AbendTile extends Drawable {
 
     @Override public void draw(Canvas c) {
         float rad = radius < 0 ? r.height() / 2f : radius;
+        if (outline) { drawOutline(c, rad); return; }
         if (focused) c.drawRoundRect(r, rad, rad, glow);
         c.drawRoundRect(r, rad, rad, fill);
         rim.setStrokeWidth((focused ? 2.5f : 1.5f) * density);
@@ -71,6 +79,22 @@ final class AbendTile extends Drawable {
         RectF in = new RectF(r.left + h, r.top + h, r.right - h, r.bottom - h);
         c.drawRoundRect(in, rad - h, rad - h, rim);
     }
+
+    private void drawOutline(Canvas c, float rad) {
+        // weiches Leuchten: mehrere breite, sehr transparente Linien übereinander
+        float base = focused ? 0.30f : 0.14f;
+        for (int k = 4; k >= 1; k--) {
+            glowLine.setStrokeWidth((1.5f + k * 2.2f) * density);
+            glowLine.setColor(((int) (255 * base / k) << 24) | (ORANGE & 0xFFFFFF));
+            c.drawRoundRect(r, rad, rad, glowLine);
+        }
+        rim.setStrokeWidth((focused ? 2.5f : 1.6f) * density);
+        rim.setColor(focused ? ORANGE : 0xD9FF8A1F);
+        c.drawRoundRect(r, rad, rad, rim);
+    }
+
+    private final Paint glowLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+    { glowLine.setStyle(Paint.Style.STROKE); }
 
     @Override public void setAlpha(int a) {}
     @Override public void setColorFilter(ColorFilter cf) {}
