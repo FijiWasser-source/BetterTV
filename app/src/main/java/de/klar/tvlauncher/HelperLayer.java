@@ -29,6 +29,8 @@ public class HelperLayer extends View {
     public interface Events {
         void onSuck();
         void onCrunch();
+        /** Schluck hat lange genug geschlafen – Pixel soll ihn wecken. */
+        default void onNapOver() {}
     }
 
     /** Ein Teil: 0 Bahnstein, 1 Stein, 2 Kiste, 3 Block. */
@@ -60,6 +62,20 @@ public class HelperLayer extends View {
     private String bubble; private float bubbleAge;
     private Integer forceLevel; private boolean forceSleep, previewPending, previewEat;
     private int frameDelay = 33; // 0 = angehalten
+    // Satt werden: Bauch wächst mit jedem Stein, dann ein Nickerchen
+    private float fullness, napTimer, wakeTimer;
+    private int fullAt = 18;
+    // Wasserball (bei Sonne): hüpft über den Bildschirm
+    private int weather = Mascot.CLEAR;
+    private boolean ball; private float ballX, ballY, ballVx, ballVy, ballSpin, nextBall = 6;
+
+    public void setWeather(int w) { weather = w; if (w != Mascot.SUN) ball = false; }
+
+    /** Vorschau: Schluck satt und schlafend. */
+    void previewNap() { preview(2, false); napTimer = 10; fullness = 1; bubble = null; }
+
+    /** Vorschau: Wasserball mitten im Flug. */
+    void previewBall(float fx, float fy) { ball = true; ballX = fx; ballY = fy; ballSpin = 0.7f; }
 
     public void setFrameDelay(int ms) { frameDelay = ms; last = SystemClock.uptimeMillis(); invalidate(); }
 
@@ -180,6 +196,15 @@ public class HelperLayer extends View {
         time += dt * stress;
         sweatPhase += dt;
         float road = roadSpeed();
+        if (napTimer > 0) {
+            napTimer -= dt;
+            if (napTimer <= 0) { napTimer = 0; if (events != null) events.onNapOver(); wakeTimer = 0.9f; }
+        }
+        if (wakeTimer > 0) {
+            wakeTimer -= dt;
+            if (wakeTimer <= 0) { fullness = 0; fullAt = 16 + rnd.nextInt(8); bubble = "HUCH!"; bubbleAge = 0; }
+        }
+        boolean napping = napTimer > 0 || wakeTimer > 0;
         Item current = null;
         for (Item it : items) if (it.state >= 2) { current = it; break; }
 
@@ -202,7 +227,7 @@ public class HelperLayer extends View {
                 float target = Math.max(frontLimit, it.x - road * dt);
                 it.x = target;
                 frontLimit = it.x + (w(it.type) * 1.5f + 1.5f) * p;  // Abstand zum nächsten
-                if (current == null && it.x <= nozzleX + 1.5f * p) {
+                if (current == null && !napping && it.x <= nozzleX + 1.5f * p) {
                     current = it;
                     boolean eat = (lv >= 3 || crowded) && rnd.nextInt(100) < 8 + lv * 3 + (crowded ? 12 : 0);
                     it.state = eat ? 3 : 2;
@@ -216,6 +241,8 @@ public class HelperLayer extends View {
             hoseWiggle = current.state == 2 ? 1 : hoseWiggle;
             if (current.t >= 1) {
                 items.remove(current);
+                fullness += 1f / fullAt;
+                if (fullness >= 1 && napTimer <= 0) { napTimer = 16 + rnd.nextFloat() * 8; bubble = "SATT!"; bubbleAge = 0; }
                 if (current.state == 3) {
                     chewing = 0.8f;
                     if (rnd.nextBoolean()) { bubble = rnd.nextBoolean() ? "MAMPF!" : "LECKER!"; bubbleAge = 0; }
@@ -239,6 +266,50 @@ public class HelperLayer extends View {
             float[] c = it.next();
             c[3] += dt; c[2] += 160 * p * dt; c[1] += c[2] * dt; c[0] += c[4] * dt;
             if (c[3] > 1.2f) it.remove();
+        }
+        stepBall(dt);
+    }
+
+    /** Wasserball: kommt von links, springt über die App-Reihe und fliegt rechts hinaus. */
+    private void stepBall(float dt) {
+        if (weather != Mascot.SUN) return;
+        if (!ball) {
+            nextBall -= dt;
+            if (nextBall <= 0) {
+                ball = true; ballX = -12 * p; ballY = surfaceY - 60 * p;
+                ballVx = (55 + rnd.nextFloat() * 30) * p; ballVy = -40 * p; nextBall = 20 + rnd.nextFloat() * 20;
+            }
+            return;
+        }
+        float r = 6 * p;
+        ballVy += 190 * p * dt;
+        ballX += ballVx * dt; ballY += ballVy * dt;
+        ballSpin += ballVx * dt / (r * 2);
+        if (ballY + r >= surfaceY) {               // hüpft auf den Icons
+            ballY = surfaceY - r;
+            ballVy = -Math.max(120 * p, Math.abs(ballVy) * 0.78f);
+        }
+        if (ballX - r > getWidth()) ball = false;
+    }
+
+    private void drawBall(Canvas c) {
+        if (!ball) return;
+        float r = 6 * p;
+        int n = 12;
+        for (int gy = 0; gy < n; gy++) {
+            for (int gx = 0; gx < n; gx++) {
+                float dx = (gx + 0.5f) / n * 2 - 1, dy = (gy + 0.5f) / n * 2 - 1;
+                if (dx * dx + dy * dy > 1) continue;
+                double ang = Math.atan2(dy, dx) + ballSpin;
+                int seg = (int) Math.floor(((ang / (2 * Math.PI)) % 1 + 1) % 1 * 6);
+                int col = seg % 3 == 0 ? 0xFFFF8A1F : seg % 3 == 1 ? 0xFFF2F5FF : 0xFF8FB4FF;
+                if (dx * dx + dy * dy < 0.06f) col = 0xFFF2F5FF;                 // Mitte
+                if (dx < -0.2f && dy < -0.3f && dx * dx + dy * dy > 0.4f) col = 0xFFFFFFFF; // Glanz
+                paint.setColor(col);
+                float cell = 2 * r / n;
+                rect.set(ballX - r + gx * cell, ballY - r + gy * cell, ballX - r + (gx + 1) * cell + 0.5f, ballY - r + (gy + 1) * cell + 0.5f);
+                c.drawRect(rect, paint);
+            }
         }
     }
 
@@ -264,12 +335,13 @@ public class HelperLayer extends View {
                 drawItem(c, it, it.startX + (mouthX() - it.startX) * k, it.startY + (mouthY() - it.startY) * k, 1.5f * (1 - 0.4f * k));
             }
         }
+        drawBall(c);
         for (float[] cr : crumbs) {
             paint.setColor(((int) (255 * Math.max(0, 1 - cr[3] / 1.2f)) << 24) | 0xA3A7AE);
             rect.set(cr[0], cr[1], cr[0] + p * 0.8f, cr[1] + p * 0.8f);
             c.drawRect(rect, paint);
         }
-        boolean busy = !items.isEmpty() || !crumbs.isEmpty() || chewing > 0;
+        boolean busy = !items.isEmpty() || !crumbs.isEmpty() || chewing > 0 || ball || napTimer > 0;
         if (running && forceLevel == null && frameDelay > 0) postInvalidateDelayed(busy ? frameDelay : 90);
     }
 
@@ -348,7 +420,7 @@ public class HelperLayer extends View {
     /** Schluck: Kopf, dünner Körper, lange Beine und Arme – in Rasterzellen relativ zu den Füßen. */
     private void drawHelper(Canvas c) {
         int lv = level();
-        boolean sleep = sleeping();
+        boolean sleep = sleeping() || napTimer > 0;
         float stress = Math.min(3f, 1 + 0.28f * (lv - 1));
         float bob = sleep ? 0 : (float) Math.sin(time * 5) * (0.4f + 0.25f * stress);
         soft.setColor(0x40000000);
@@ -359,8 +431,10 @@ public class HelperLayer extends View {
         px(c, 2, -11, 1.4f, 11, BODY_DARK);
         px(c, -4, -1, 3, 1, INK); px(c, 2, -1, 3, 1, INK);
         float bodyTop = -19 + bob;
+        float belly = 2.6f * Math.min(1, fullness);     // runder, je satter
         px(c, -2.5f, bodyTop, 5, 8.5f, BODY);
-        px(c, -2.5f, bodyTop + 6.5f, 5, 2, BODY_DARK);
+        if (belly > 0.3f) { px(c, -2.5f - belly / 2, bodyTop + 3, 5 + belly, 5f, BODY); px(c, -1.5f - belly / 2, bodyTop + 2, 3 + belly, 7f, BODY); }
+        px(c, -2.5f - belly / 2, bodyTop + 6.5f, 5 + belly, 2, BODY_DARK);
         // rechter Arm hält den Schlauch (zur Hand oben vorn), linker Arm locker bzw. zum Mund beim Essen
         for (int k = 0; k < 6; k++) px(c, 2.5f + k * 0.4f, bodyTop + 1 + k * 0.9f, 1, 1, BODY_DARK);
         float reach = sleep ? 0 : armReach;
@@ -387,7 +461,11 @@ public class HelperLayer extends View {
             float sy = headTop + 1 + (sweatPhase * 6 % 5);
             px(c, -6.5f, sy, 0.9f, 1.3f, 0xFF9FD3FF);
         }
-        if (sleep) { paint.setColor(0xFF6E7BA8); PixelText.draw(c, "Z", footX + 7 * p, surfaceY + (headTop - 4) * p, p * 0.5f, paint); }
+        if (sleep) {
+            paint.setColor(0xFF6E7BA8);
+            boolean big = ((int) (time * 1.5f)) % 2 == 0 || forceLevel != null;
+            PixelText.draw(c, big ? "ZZ" : "Z", footX + 7 * p, surfaceY + (headTop - 4) * p, p * (big ? 0.6f : 0.5f), paint);
+        }
         if (bubble != null && !sleep) {
             float gc = p * 0.5f, tw = PixelText.measure(bubble, gc), pad = p * 1.2f;
             float bx = footX + 8 * p, by = surfaceY + (headTop - 7) * p;

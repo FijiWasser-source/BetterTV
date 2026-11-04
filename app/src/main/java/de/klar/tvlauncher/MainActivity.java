@@ -141,9 +141,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         dockList.setAdapter(adapter);
         helper = findViewById(R.id.helper);
         applyAnimations();
+        applyGameWeather();
         helper.attach(mascot, dockList, new HelperLayer.Events() {
             @Override public void onSuck() { sound.suck(); }
             @Override public void onCrunch() { sound.crunch(); }
+            @Override public void onNapOver() { if (!mascot.isSleeping()) mascot.say("Aufwachen, Schluck!"); }
         });
     }
 
@@ -158,6 +160,54 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         if (sound != null) {
             if (delay == 0 || mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
         }
+    }
+
+    private int lastWeatherCode = -1;
+
+    private String gameWeatherLabel() {
+        switch (prefs.gameWeather()) {
+            case "regen": return "Regen";
+            case "schnee": return "Schnee";
+            case "sonne": return "Sonne";
+            case "aus": return "Aus";
+            default: return "Echt";
+        }
+    }
+
+    /** Echtes Wetter (WMO-Code) bzw. Auswahl in den Einstellungen -> Wetter im Spiel. */
+    private void applyGameWeather() {
+        if (!abend || mascot == null) return;
+        String mode = prefs.gameWeather();
+        int w;
+        switch (mode) {
+            case "regen": w = Mascot.RAIN; break;
+            case "schnee": w = Mascot.SNOW; break;
+            case "sonne": w = Mascot.SUN; break;
+            case "aus": w = Mascot.CLEAR; break;
+            default: w = gameWeatherFor(lastWeatherCode, java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY));
+        }
+        mascot.setWeather(w);
+        ((SkyLayer) findViewById(R.id.sky)).setWeather(w);
+        helper.setWeather(w);
+    }
+
+    /** WMO-Wettercode -> Spielwetter (Sonne nur tagsüber). */
+    static int gameWeatherFor(int code, int hour) {
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) return Mascot.RAIN;
+        if ((code >= 71 && code <= 77) || code == 85 || code == 86) return Mascot.SNOW;
+        if ((code == 0 || code == 1) && hour >= 8 && hour < 19) return Mascot.SUN;
+        return Mascot.CLEAR;
+    }
+
+    private void chooseGameWeather() {
+        String current = prefs.gameWeather();
+        Sheet sheet = new Sheet(this, "Wetter im Spiel");
+        String[][] options = {{"echt", "Echt (wie draußen)"}, {"regen", "Regen"}, {"schnee", "Schnee"}, {"sonne", "Sonne"}, {"aus", "Aus"}};
+        for (String[] o : options) {
+            Runnable pick = () -> { prefs.setGameWeather(o[0]); applyGameWeather(); };
+            if (o[0].equals(current)) sheet.primary("✓  " + o[1], pick); else sheet.button(o[1], pick);
+        }
+        sheet.button("Abbrechen", null).show();
     }
 
     private void chooseAnimations() {
@@ -361,6 +411,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         new Sheet(this, getString(R.string.settings))
                 .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)"), this::chooseDesign)
                 .button("Animationen: " + ("aus".equals(prefs.animations()) ? "Aus" : "sparsam".equals(prefs.animations()) ? "Sparsam" : "Voll"), this::chooseAnimations)
+                .button("Wetter im Spiel: " + gameWeatherLabel(), this::chooseGameWeather)
                 .button("Musik & Sounds: " + (prefs.soundOn() ? "an" : "aus") + " – wechseln", () -> {
                     prefs.setSoundOn(!prefs.soundOn());
                     if (sound != null) {
@@ -535,6 +586,8 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 Weather.Current c = Weather.current(lat, lon);
                 main.post(() -> {
                     String desc = Weather.describe(c.code);
+                    lastWeatherCode = c.code;
+                    applyGameWeather();
                     showWeather(Weather.formatTemp(c.temperature), desc.isEmpty() ? city : desc + " · " + city);
                 });
             } catch (Exception e) {

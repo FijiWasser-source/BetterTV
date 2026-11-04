@@ -84,11 +84,11 @@ public class Mascot extends View {
     private static final float GROUND_FROM_BOTTOM = 6f;
 
     static final class Thing {
-        final int type; // 0 Stein (3×2), 1 Kiste (3×3), 2 Block (2×4), 3 Stern, 4 Plattform
+        final int type; // 0 Stein (3×2), 1 Kiste (3×3), 2 Block (2×4), 3 Stern, 4 Plattform, 5 Pfütze
         float x; final float y; boolean gone, hit, miss; float len = 12;
         Thing(int type, float x, float y) { this.type = type; this.x = x; this.y = y; }
-        float w() { return type == 0 ? 3 : type == 1 ? 3 : type == 2 ? 2 : type == 4 ? len : 5 * 0.8f; }
-        float h() { return type == 0 ? 2 : type == 1 ? 3 : type == 2 ? 4 : type == 4 ? 1.5f : 5 * 0.8f; }
+        float w() { return type == 0 ? 3 : type == 1 ? 3 : type == 2 ? 2 : type == 4 ? len : type == 5 ? len : 5 * 0.8f; }
+        float h() { return type == 0 ? 2 : type == 1 ? 3 : type == 2 ? 4 : type == 4 ? 1.5f : type == 5 ? 0.4f : 5 * 0.8f; }
         /** Oberkante einer Plattform (Höhe, auf der man steht). */
         float top() { return y + 1.5f; }
     }
@@ -152,6 +152,21 @@ public class Mascot extends View {
     }
 
     public boolean isPaused() { return frameDelay == 0; }
+
+    /** Wetter im Spiel: 0 normal, 1 Regen, 2 Schnee, 3 Sonne. */
+    public static final int CLEAR = 0, RAIN = 1, SNOW = 2, SUN = 3;
+    private int weather = CLEAR;
+    private float nextPuddle = 12, sweatTimer;
+    private final List<float[]> splashes = new ArrayList<>(); // {x(Zellen), y(Zellen über Boden), vx, vy, alter}
+
+    public void setWeather(int w) {
+        if (w == weather) return;
+        weather = w;
+        if (w != RAIN) for (Iterator<Thing> it = things.iterator(); it.hasNext(); ) if (it.next().type == 5) it.remove();
+        invalidate();
+    }
+
+    public int weather() { return weather; }
 
     public Mascot(Context c) { this(c, null); }
 
@@ -232,6 +247,21 @@ public class Mascot extends View {
             if (Float.isNaN(jumpY) || jumpY < 0 || things.size() > 50) throw new IllegalStateException("Spielzustand kaputt");
         }
         return stars;
+    }
+
+    /** Nur für die Vorschau: Szene mit Wetter. */
+    void previewWeather(int w) {
+        preview(Emote.NONE, false);
+        setWeather(w);
+        speech = null;
+        if (w == RAIN) {
+            Thing pd = new Thing(5, HERO_X + 4, 0); pd.len = 7; things.add(pd);
+            for (int k = 0; k < 6; k++) splashes.add(new float[]{HERO_X + 3 + k * 1.6f, 0.6f + (k % 3) * 0.8f, 0, 0, 0.2f});
+            jumpY = 0;
+        } else if (w == SUN) {
+            for (int k = 0; k < 3; k++) splashes.add(new float[]{HERO_X + (k == 1 ? 13 : 0.5f), jumpY + 10 + k, 0, 0, 0.3f});
+        }
+        invalidate();
     }
 
     /** Nur für die Vorschau: Pixel gerade vom Auto erwischt. */
@@ -347,6 +377,14 @@ public class Mascot extends View {
                 nextSpawn = 16 + rnd.nextInt(22);
             }
         }
+        if (weather == RAIN) {
+            nextPuddle -= dx;
+            if (nextPuddle <= 0) {
+                Thing pd = new Thing(5, trackCells, 0); pd.len = 4 + rnd.nextInt(4);
+                things.add(pd);
+                nextPuddle = 14 + rnd.nextInt(18);
+            }
+        }
         for (Iterator<Thing> it = things.iterator(); it.hasNext(); ) {
             Thing th = it.next();
             th.x -= dx;
@@ -367,11 +405,12 @@ public class Mascot extends View {
             // Hindernisse haben Vorrang: für Sterne/Plattformen nur springen, wenn die Landezone frei ist
             boolean obstacleSoon = false;
             for (Thing th : things) {
-                if (th.type == 3 || th.type == 4) continue;
+                if (th.type >= 3) continue;
                 float gap = th.x - heroR;
                 if (floor == 0 && gap > 2.8f && gap < 24f) obstacleSoon = true;
             }
             for (Thing th : things) {
+                if (th.type == 5) continue;
                 float gap = th.x - heroR;
                 boolean window;
                 if (th.type == 4) {
@@ -413,6 +452,19 @@ public class Mascot extends View {
             if (!onIt) { airborne = true; vy = 0; floor = 0; }
         }
 
+        for (Iterator<float[]> it = splashes.iterator(); it.hasNext(); ) {
+            float[] sp = it.next();
+            sp[4] += dt; sp[3] -= GRAVITY * dt; sp[0] += sp[2] * dt - dx; sp[1] += sp[3] * dt;
+            if (sp[1] < 0 || sp[4] > 1.2f) it.remove();
+        }
+        if (weather == SUN) {
+            sweatTimer -= dt;
+            if (sweatTimer <= 0) {   // Schweißtropfen fliegen vom Kopf
+                splashes.add(new float[]{HERO_X + (rnd.nextBoolean() ? 1 : 12), jumpY + 10, (rnd.nextFloat() - 0.5f) * 8, 6 + rnd.nextFloat() * 4, 0});
+                sweatTimer = 0.5f + rnd.nextFloat() * 0.7f;
+                if (rnd.nextInt(30) == 0) say(rnd.nextBoolean() ? "Puh, heiß!" : "Ich schwitze!");
+            }
+        }
         stepCar(dt, speed);
 
         // Treffer: Hindernis -> Stolpern, Stern -> einsammeln
@@ -420,6 +472,12 @@ public class Mascot extends View {
         for (Thing th : things) {
             if (th.type == 4) continue;
             boolean overlapX = th.x < heroR && th.x + th.w() > heroL;
+            if (th.type == 5) { // durch die Pfütze: es spritzt
+                if (overlapX && jumpY < 0.2f && rnd.nextInt(3) == 0) {
+                    splashes.add(new float[]{heroL + rnd.nextFloat() * 10, 0.3f, (rnd.nextFloat() - 0.7f) * 14, 8 + rnd.nextFloat() * 8, 0});
+                }
+                continue;
+            }
             if (!overlapX) continue;
             if (th.type == 3) {
                 if (th.y < head && th.y + th.h() > feet) {
@@ -470,7 +528,7 @@ public class Mascot extends View {
         // Hindernis direkt vor dem Auto -> kleiner Hüpfer
         if (!carAir) {
             for (Thing th : things) {
-                if (th.type == 4 || th.type == 3) continue;
+                if (th.type >= 3) continue;
                 float gap = th.x - (carX + 17);
                 if (gap > 0.5f && gap < 2.5f) { carVy = 26; carAir = true; break; }
             }
@@ -576,6 +634,15 @@ public class Mascot extends View {
         canvas.drawOval(rect, soft);
 
         drawHero(canvas, ox + shake, oy, now, t, sleeping);
+        if (weather == RAIN && !sleeping) drawUmbrella(canvas, ox + shake, oy);
+        for (float[] sp : splashes) {
+            int a = Math.round(220 * Math.max(0, 1 - sp[4] / 1.2f));
+            paint.setColor((a << 24) | (weather == SUN ? 0x9FD3FF : 0x8FB4FF));
+            float sx = sp[0] * cell, sy = ground - sp[1] * cell;
+            float dropW = weather == SUN ? cell * 0.9f : cell * 0.6f, dropH = weather == SUN ? cell * 1.4f : cell * 0.6f;
+            rect.set(sx, sy, sx + dropW, sy + dropH);
+            canvas.drawRect(rect, paint);
+        }
 
         // Sternzähler, Level und Spieler-Anzeige in Pixel-Schrift
         float hudY = cell * 1.5f; // oben links, außerhalb der Fahrbahn
@@ -680,6 +747,11 @@ public class Mascot extends View {
                 rect.set(steadyL * cell, ground + r * cell, steadyR * cell + 0.5f, ground + (r + 1) * cell + 0.5f);
                 c.drawRect(rect, paint);
             }
+            if (weather == SNOW) {
+                paint.setColor(0xFFF2F5FF);
+                rect.set(steadyL * cell, ground - cell * 0.6f, steadyR * cell + 0.5f, ground + cell * 0.3f);
+                c.drawRect(rect, paint);
+            }
             paint.setColor(0x802E3035);
             float off = -(scroll % BLOCK);
             for (float bx = steadyL + ((off % BLOCK) + BLOCK) % BLOCK; bx < steadyR; bx += BLOCK) {
@@ -712,6 +784,11 @@ public class Mascot extends View {
                 rect.set(x0, ground + r * cell + dy, x1 + 0.5f, ground + (r + 1) * cell + 0.5f + dy);
                 c.drawRect(rect, paint);
             }
+            if (weather == SNOW) {
+                paint.setColor((alpha << 24) | 0xF2F5FF);
+                rect.set(x0, ground - cell * 0.6f + dy, x1 + 0.5f, ground + cell * 0.3f + dy);
+                c.drawRect(rect, paint);
+            }
             // feine Fuge zwischen den Steinen + Kiesel
             paint.setColor((Math.round(alpha * 0.5f) << 24) | 0x2E3035);
             rect.set(x0, ground + dy, x0 + 1, ground + 2 * cell + dy);
@@ -725,6 +802,12 @@ public class Mascot extends View {
 
     private void drawThing(Canvas c, Thing th, float ground) {
         float x = th.x * cell;
+        if (th.type == 5) { // Pfütze auf der Bahn
+            float w = th.w() * cell;
+            paint.setColor(0xFF3F5677); rect.set(x, ground - cell * 0.1f, x + w, ground + cell * 0.6f); c.drawRect(rect, paint);
+            paint.setColor(0xFF6E8DB8); rect.set(x + cell, ground, x + w - cell * 1.5f, ground + cell * 0.25f); c.drawRect(rect, paint);
+            return;
+        }
         if (th.type == 4) { // schwebende Plattform im Stil der Bahn
             float top = ground - th.top() * cell, w = th.w() * cell;
             paint.setColor(0x33000000);
@@ -732,6 +815,7 @@ public class Mascot extends View {
             paint.setColor(0xFFA3A7AE); rect.set(x, top, x + w, top + cell * 0.6f); c.drawRect(rect, paint);
             paint.setColor(0xFF868A92); rect.set(x, top + cell * 0.6f, x + w, top + cell * 1.1f); c.drawRect(rect, paint);
             paint.setColor(0xFF4A4D54); rect.set(x + cell * 0.5f, top + cell * 1.1f, x + w - cell * 0.5f, top + cell * 1.5f); c.drawRect(rect, paint);
+            if (weather == SNOW) { paint.setColor(0xFFF2F5FF); rect.set(x, top - cell * 0.5f, x + w, top + cell * 0.2f); c.drawRect(rect, paint); }
             return;
         }
         if (th.type == 3) {
@@ -753,6 +837,7 @@ public class Mascot extends View {
             paint.setColor(0xFF8E929A); rect.set(x, top, x + w - cell, top + cell); c.drawRect(rect, paint);
             paint.setColor(0xFF4F5259); rect.set(x + w - cell, top + cell, x + w, ground); c.drawRect(rect, paint);
         }
+        if (weather == SNOW) { paint.setColor(0xFFF2F5FF); rect.set(x - cell * 0.2f, top - cell * 0.6f, x + w + cell * 0.2f, top + cell * 0.2f); c.drawRect(rect, paint); }
     }
 
     private void drawHero(Canvas c, float ox, float oy, long now, float t, boolean sleeping) {
@@ -849,6 +934,33 @@ public class Mascot extends View {
         rect.set(ox + 2.4f * cell, ey + 2.4f * cell, ox + 3.6f * cell, ey + 3f * cell); c.drawOval(rect, soft);
         rect.set(ox + 11.6f * cell, ey + 2.4f * cell, ox + 12.8f * cell, ey + 3f * cell); c.drawOval(rect, soft);
         soft.setColor(0x4D000000);
+    }
+
+    // Regenschirm (eigene Pixel-Grafik): blau-weiß gestreift, Stiel zur Hand
+    private static final String[] UMBRELLA = {
+            ".....WBBW.....",
+            "...BBWBBWBB...",
+            "..BBBWBBWBBB..",
+            ".BBBBWBBWBBBB.",
+            "BBBBBWBBWBBBBB",
+            "B.B.B.WW.B.B.B",
+    };
+
+    private void drawUmbrella(Canvas c, float ox, float oy) {
+        float s = cell, top = oy - 9 * cell;
+        float ux = ox + 1 * cell;
+        for (int r = 0; r < UMBRELLA.length; r++) {
+            for (int k = 0; k < UMBRELLA[r].length(); k++) {
+                char ch = UMBRELLA[r].charAt(k);
+                if (ch == '.') continue;
+                paint.setColor(ch == 'W' ? 0xFFE8EEFF : 0xFF8FB4FF);
+                rect.set(ux + k * s, top + r * s, ux + (k + 1) * s + 0.5f, top + (r + 1) * s + 0.5f);
+                c.drawRect(rect, paint);
+            }
+        }
+        paint.setColor(0xFF2E3642); // Stiel bis zur Hand
+        rect.set(ux + 7.5f * s, top + 6 * s, ux + 8.2f * s, oy + 6 * cell); c.drawRect(rect, paint);
+        rect.set(ux + 8.2f * s, oy + 5.5f * cell, ux + 9 * s, oy + 6.2f * cell); c.drawRect(rect, paint);
     }
 
     /** Höchste Fläche unter der Figur (für den Schatten). */

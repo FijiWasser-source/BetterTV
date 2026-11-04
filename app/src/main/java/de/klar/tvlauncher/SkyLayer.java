@@ -76,6 +76,49 @@ public class SkyLayer extends View {
     private float nextBirds = 4, nextPlane = 18, nextBalloon = 60, nextShooting = 8;
     private Integer forceHour; // nur Vorschau
     private boolean animated = true;
+    private int weather = Mascot.CLEAR;
+    // Regentropfen und Schneeflocken: feste Arrays, keine Objekte pro Bild
+    private static final int DROPS = 90;
+    private final float[] dropX = new float[DROPS], dropY = new float[DROPS], dropV = new float[DROPS];
+    private boolean dropsSeeded;
+
+    public void setWeather(int w) { weather = w; dropsSeeded = false; invalidate(); }
+
+    private void seedDrops() {
+        if (dropsSeeded || getWidth() == 0) return;
+        dropsSeeded = true;
+        Random r = new Random(5);
+        for (int i = 0; i < DROPS; i++) {
+            dropX[i] = r.nextFloat() * getWidth(); dropY[i] = r.nextFloat() * getHeight();
+            dropV[i] = 0.6f + r.nextFloat() * 0.8f;
+        }
+    }
+
+    private void stepDrops(float dt) {
+        int w = getWidth(), h = getHeight();
+        for (int i = 0; i < DROPS; i++) {
+            if (weather == Mascot.RAIN) { dropY[i] += dropV[i] * 260 * px * dt; dropX[i] -= 30 * px * dt; }
+            else { dropY[i] += dropV[i] * 18 * px * dt; dropX[i] += (float) Math.sin(dropY[i] / (14 * px) + i) * 8 * px * dt; }
+            if (dropY[i] > h) { dropY[i] -= h + 10 * px; dropX[i] = (dropX[i] + w * 0.37f) % w; }
+            if (dropX[i] < 0) dropX[i] += w;
+        }
+    }
+
+    private void drawDrops(Canvas c) {
+        if (weather != Mascot.RAIN && weather != Mascot.SNOW) return;
+        seedDrops();
+        for (int i = 0; i < DROPS; i++) {
+            if (weather == Mascot.RAIN) {
+                paint.setColor(i % 4 == 0 ? 0xA6B9CCE6 : 0x809FB8D9);
+                rect.set(dropX[i], dropY[i], dropX[i] + px * 0.6f, dropY[i] + px * 3.6f);
+            } else {
+                paint.setColor(i % 3 == 0 ? 0xCCFFFFFF : 0x8CFFFFFF);
+                float f = px * (i % 3 == 0 ? 1.2f : 0.8f);
+                rect.set(dropX[i], dropY[i], dropX[i] + f, dropY[i] + f);
+            }
+            c.drawRect(rect, paint);
+        }
+    }
 
     /** false: Himmel steht still (einmal gezeichnet). */
     public void setAnimated(boolean on) { animated = on; last = SystemClock.uptimeMillis(); invalidate(); }
@@ -178,7 +221,7 @@ public class SkyLayer extends View {
         long now = SystemClock.uptimeMillis();
         float dt = Math.min(0.1f, (now - last) / 1000f);
         last = now;
-        if (forceHour == null && animated) step(dt);
+        if (forceHour == null && animated) { step(dt); if (weather == Mascot.RAIN || weather == Mascot.SNOW) { seedDrops(); stepDrops(dt); } }
         float t = now / 1000f;
         int w = getWidth(), h = getHeight();
 
@@ -209,7 +252,8 @@ public class SkyLayer extends View {
             switch (s.kind) {
                 case 0: {
                     String[] shape = s.variant == 0 ? CLOUD_S : s.variant == 1 ? CLOUD_M : CLOUD_L;
-                    paint.setColor((0x10 + s.variant * 0x06) << 24 | 0xFFFFFF);
+                    int cloudA = (weather == Mascot.RAIN ? 0x22 : 0x10) + s.variant * 0x06;
+                    paint.setColor(cloudA << 24 | (weather == Mascot.RAIN ? 0xB3B7BE : 0xFFFFFF));
                     draw(c, shape, s.x, s.y, px * (1 + s.variant * 0.35f));
                     break;
                 }
@@ -261,8 +305,10 @@ public class SkyLayer extends View {
             }
         }
 
+        drawDrops(c);
+
         // Glühwürmchen abends/nachts im unteren Drittel
-        if (evening()) {
+        if (evening() && weather == Mascot.CLEAR) {
             for (int k = 0; k < 9; k++) {
                 float fx = FLY_X[k] * w + (float) Math.sin(t * 0.4 + k) * 12 * px;
                 float fy = h * FLY_Y[k] + (float) Math.cos(t * 0.5 + k * 2) * 6 * px;

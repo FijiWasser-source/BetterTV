@@ -81,6 +81,11 @@ final class Prefs {
 
     void setAnimations(String a) { sp.edit().putString("animations", a).apply(); }
 
+    /** "echt", "regen", "schnee", "sonne" oder "aus". */
+    String gameWeather() { return sp.getString("game_weather", "echt"); }
+
+    void setGameWeather(String w) { sp.edit().putString("game_weather", w).apply(); }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }

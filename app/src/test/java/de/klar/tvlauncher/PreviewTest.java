@@ -232,6 +232,17 @@ public class PreviewTest {
     @Test public void abendDunkel() { snapshotAbend(IconStyle.DARK, "abend_dunkel"); }
     @Test public void abendOrange() { snapshotAbend(IconStyle.ORANGE, "abend_orange"); }
     @Test public void abendGlas() { snapshotAbend(IconStyle.GLASS, "abend_glas"); }
+    @Test public void wetterRegen() { snapshotWeather(Mascot.RAIN, "regen"); }
+    @Test public void wetterSchnee() { snapshotWeather(Mascot.SNOW, "schnee"); }
+    @Test public void wetterSonne() { snapshotWeather(Mascot.SUN, "sonne"); }
+
+    private int pendingWeather = -1;
+
+    private void snapshotWeather(int w, String name) {
+        pendingWeather = w;
+        snapshotAbend(IconStyle.DARK, name);
+        pendingWeather = -1;
+    }
     @Test public void abendGlasOrange() { snapshotAbend(IconStyle.GLASS_ORANGE, "abend_glas_orange"); }
 
     private void snapshotAbend(String style, String name) {
@@ -291,6 +302,16 @@ public class PreviewTest {
         HelperLayer helper = root.findViewById(R.id.helper);
         helper.attach((Mascot) root.findViewById(R.id.mascot), dock, null);
         helper.preview(IconStyle.DARK.equals(style) ? 6 : 2, IconStyle.DARK.equals(style));
+        if (pendingWeather >= 0) {
+            Mascot mm = root.findViewById(R.id.mascot);
+            mm.previewWeather(pendingWeather);
+            SkyLayer sky = root.findViewById(R.id.sky);
+            sky.preview(pendingWeather == Mascot.SUN ? 13 : 19);
+            sky.setWeather(pendingWeather);
+            helper.setWeather(pendingWeather);
+            if (pendingWeather == Mascot.SNOW) helper.previewNap();      // Schnee-Vorschau zeigt auch den satten Schluck
+            if (pendingWeather == Mascot.SUN) helper.previewBall(900, 600);
+        }
         paparazzi.snapshot(root, name);
     }
 

@@ -57,6 +57,11 @@ der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= 
 **Musik & Sounds:** ein ruhiger, selbst erzeugter Lo-Fi-Loop und Retro-Effekte für Pixel (Sprung,
 Stern, Stolpern) – alles per `tools/make_audio.py` synthetisiert, keine fremden Aufnahmen. Läuft leise,
 nur solange die Startansicht sichtbar ist, nachts aus; abschaltbar unter *Einstellungen → Musik & Sounds*.
+**Wetter im Spiel** (wie draußen, oder fest unter *Einstellungen → Wetter im Spiel*): **Regen** –
+Pixel-Regen über den ganzen Bildschirm, Pixel mit Schirm, Pfützen, die spritzen; **Schnee** – Flocken und
+eine weiße Schicht auf Bahn und Hindernissen; **Sonne** – Pixel schwitzt, ein Wasserball hüpft über die
+App-Reihe. **Schluck wird satt:** mit jedem Stein wird sein Bauch runder, dann sagt er „SATT!“ und macht
+ein Nickerchen (der Stau wächst), bis Pixel „Aufwachen, Schluck!“ ruft.
 **Animationen** (*Einstellungen → Animationen*): Voll · Sparsam (Himmel steht still, Figuren mit
 ~20 Bildern/s – schont ältere Fernseher) · Aus (Standbild, kein Motorgeräusch). „Einstellungen“ und
 „Alle Apps“ haben Symbole aus dunklem Glas mit orangem Zeichen und Leuchten.
