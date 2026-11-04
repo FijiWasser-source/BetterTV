@@ -145,7 +145,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private void applyFocus(Holder h, boolean focused, boolean animate) {
         if (abend) {
             AbendTile.focus(h.card, focused);
-            if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : 0xFFAEB8D9);
+            if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : AbendTile.INK_SOFT);
             float s = focused ? focusScale : 1f;
             if (animate) h.card.animate().scaleX(s).scaleY(s).setInterpolator(ease).setDuration(160).start();
             else { h.card.setScaleX(s); h.card.setScaleY(s); }
