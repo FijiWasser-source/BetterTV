@@ -7,14 +7,15 @@ package de.klar.tvlauncher;
 final class IconStyle {
     private IconStyle() {}
 
-    static final String ORIGINAL = "original", DARK = "dunkel", ORANGE = "orange", BLUE = "blau";
-    static final String[] ALL = {ORIGINAL, DARK, ORANGE, BLUE};
+    static final String ORIGINAL = "original", DARK = "dunkel", ORANGE = "orange", BLUE = "blau", GLASS = "glas";
+    static final String[] ALL = {ORIGINAL, DARK, ORANGE, BLUE, GLASS};
 
     static String label(String style) {
         switch (style) {
             case DARK: return "Dunkel";
             case ORANGE: return "Orange getönt";
             case BLUE: return "Blau getönt";
+            case GLASS: return "Glas";
             default: return "Original";
         }
     }
@@ -64,6 +65,7 @@ final class IconStyle {
             if ((px[i] >>> 24) > 128) { lo = Math.min(lo, lum[i]); hi = Math.max(hi, lum[i]); }
         }
         float range = Math.max(0.15f, hi - lo);
+        if (GLASS.equals(style)) { glass(px, lum, lo, range, width, height); return; }
         // 3. Auf Verlauf dunkler Grund -> Tönung abbilden (Kontrast gestreckt)
         int f = fg(style);
         for (int i = 0; i < px.length; i++) {
@@ -77,4 +79,29 @@ final class IconStyle {
     }
 
     private static int mix(int a, int b, float t) { return Math.round(a + (b - a) * t); }
+
+    /**
+     * Glas: getöntes, dunkel durchscheinendes Glas (Kachelfarbe schimmert durch), das Logo
+     * hell und fast deckend darauf, oben ein Lichtreflex und eine feine helle Kante.
+     */
+    private static void glass(int[] px, float[] lum, float lo, float range, int width, int height) {
+        float highlightRows = height * 0.45f;
+        for (int y = 0; y < height; y++) {
+            float sheen = y < highlightRows ? 0.22f * (1 - y / highlightRows) : 0;
+            for (int x = 0; x < width; x++) {
+                int i = y * width + x;
+                float t = Math.max(0, Math.min(1, (lum[i] - lo) / range));
+                t = t * t * (3 - 2 * t);
+                // Farbe: Grund fast schwarz (mit Reflex aufgehellt) -> Logo weiß
+                float g = 0.06f + sheen;
+                float v = g + (1 - g) * t;
+                float a = 0.42f + (0.95f - 0.42f) * t;                  // Grund ~42 %, Logo ~95 %
+                boolean edge = y == 0 || x == 0 || x == width - 1 || y == height - 1;
+                if (edge) { v = 1f; a = y == 0 ? 0.6f : 0.35f; }         // helle Kante, oben kräftiger
+                int c = Math.round(v * 255);
+                int alpha = Math.round(a * (px[i] >>> 24));
+                px[i] = (alpha << 24) | (c << 16) | (c << 8) | c;
+            }
+        }
+    }
 }
