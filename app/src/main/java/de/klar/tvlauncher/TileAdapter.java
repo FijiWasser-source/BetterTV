@@ -99,11 +99,18 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         AppEntry e = items.get(position);
         int color = colorOf(e);
         h.card.setTag(e.key);
-        boolean outline = IconStyle.isGlass(iconStyle);
+        boolean glass = IconStyle.isGlass(iconStyle);
         if (abend && !(h.card.getBackground() instanceof AbendTile
-                && ((AbendTile) h.card.getBackground()).outline == outline)) {
-            h.card.setBackground(new AbendTile(density, 16, outline));
-            if (h.label != null) h.label.setTextColor(outline ? 0xFFFFFFFF : AbendTile.INK);
+                && ((AbendTile) h.card.getBackground()).invisible == glass)) {
+            // Glas: keine Kachel, kein Rahmen – nur das leuchtende Glas-Logo
+            h.card.setBackground(new AbendTile(density, 16, false, glass));
+            if (h.label != null) h.label.setTextColor(AbendTile.INK);
+        }
+        if (abend) {
+            boolean special = e.launchIntent == null; // "Alle Apps", "Einstellungen" behalten ihren Namen
+            if (h.label != null) h.label.setVisibility(glass && !special ? View.GONE : View.VISIBLE);
+            if (h.label != null && glass) h.label.setTextColor(0xFFFFFFFF);
+            if (h.number != null) h.number.setVisibility(glass ? View.GONE : View.VISIBLE);
         }
         if (h.number != null) {
             // Nummer = Taste auf der Fernbedienung (nur echte Apps, 1–9)
@@ -118,7 +125,9 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             // Im Design "Abend" runde Ecken direkt im Bild – bleibt auch bei Fokus (Software-Zeichnung) rund
             // Runde Ecken im Design "Abend"; Symbol-Stil gilt überall in Klar
             boolean styleBanner = abend || !IconStyle.ORIGINAL.equals(iconStyle);
-            h.banner.setImageDrawable(styleBanner ? new RoundedDrawable(e.banner, abend ? 10 * density : 0, iconStyle) : e.banner);
+            float radius = abend && !glass ? 10 * density : 0;
+            h.banner.setImageDrawable(styleBanner ? new RoundedDrawable(e.banner, radius, iconStyle) : e.banner);
+            if (abend) { h.banner.setScaleX(glass ? 1.25f : 1f); h.banner.setScaleY(glass ? 1.25f : 1f); }
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.card.setBackgroundTintList(null);
@@ -160,9 +169,11 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private void applyFocus(Holder h, boolean focused, boolean animate) {
         if (abend) {
             AbendTile.focus(h.card, focused);
+            if (h.banner.getDrawable() instanceof RoundedDrawable) ((RoundedDrawable) h.banner.getDrawable()).setFocused(focused);
+            if (h.icon.getDrawable() instanceof RoundedDrawable) ((RoundedDrawable) h.icon.getDrawable()).setFocused(focused);
             boolean ol = h.card.getBackground() instanceof AbendTile && ((AbendTile) h.card.getBackground()).outline;
             if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : ol ? 0xFFA9ADB5 : AbendTile.INK_SOFT);
-            float s = focused ? focusScale : 1f;
+            float s = focused ? (IconStyle.isGlass(iconStyle) ? 1.14f : focusScale) : 1f;
             if (animate) h.card.animate().scaleX(s).scaleY(s).setInterpolator(ease).setDuration(160).start();
             else { h.card.setScaleX(s); h.card.setScaleY(s); }
             return;

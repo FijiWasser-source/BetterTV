@@ -21,6 +21,9 @@ final class RoundedDrawable extends Drawable {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF rect = new RectF();
     private Bitmap cache;
+    private Bitmap halo;           // nur bei Glas: oranges Leuchten um das Logo
+    private final Paint haloPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+    private boolean focused;
     private final String style;
 
     RoundedDrawable(Drawable source, float radius) { this(source, radius, IconStyle.ORIGINAL); }
@@ -41,6 +44,11 @@ final class RoundedDrawable extends Drawable {
             int w = cache.getWidth(), h = cache.getHeight();
             int[] px = new int[w * h];
             cache.getPixels(px, 0, w, 0, 0, w, h);
+            if (IconStyle.isGlass(style)) {
+                float[] m = IconStyle.mask(px, w);
+                if (halo != null) halo.recycle();
+                halo = Bitmap.createBitmap(IconStyle.halo(m, w, Math.max(3, Math.round(h * 0.06f))), w, h, Bitmap.Config.ARGB_8888);
+            }
             IconStyle.apply(px, w, style);
             cache.setPixels(px, 0, w, 0, 0, w, h);
         }
@@ -51,8 +59,21 @@ final class RoundedDrawable extends Drawable {
         paint.setShader(shader);
     }
 
+    /** Bei Glas: ausgewählte App leuchtet stärker. */
+    void setFocused(boolean f) {
+        if (focused == f) return;
+        focused = f;
+        invalidateSelf();
+    }
+
     @Override public void draw(Canvas c) {
         if (cache == null) return;
+        if (halo != null) {
+            haloPaint.setAlpha(focused ? 255 : 120);
+            Rect b = getBounds();
+            c.drawBitmap(halo, b.left, b.top, haloPaint);
+            if (focused) c.drawBitmap(halo, b.left, b.top, haloPaint); // doppelt = kräftiger
+        }
         rect.set(getBounds());
         c.drawRoundRect(rect, radius, radius, paint);
     }

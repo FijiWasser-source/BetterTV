@@ -85,6 +85,71 @@ final class IconStyle {
 
     static boolean isGlass(String style) { return GLASS.equals(style) || GLASS_ORANGE.equals(style); }
 
+    /** Logo-Maske 0..1 (0 = Hintergrund), gleiche Erkennung wie bei den Stilen. */
+    static float[] mask(int[] px, int width) {
+        int height = px.length / width;
+        float[] lum = new float[px.length];
+        for (int i = 0; i < px.length; i++) {
+            int c = px[i];
+            lum[i] = (0.2126f * ((c >> 16) & 0xFF) + 0.7152f * ((c >> 8) & 0xFF) + 0.0722f * (c & 0xFF)) / 255f;
+        }
+        double sum = 0; int n = 0;
+        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) {
+            boolean edge = y == 0 || y == height - 1 || x == 0 || x == width - 1;
+            int i = y * width + x;
+            if (edge && (px[i] >>> 24) > 128) { sum += lum[i]; n++; }
+        }
+        boolean bright = n > 0 && sum / n > 0.5;
+        float lo = 1, hi = 0;
+        for (int i = 0; i < lum.length; i++) {
+            if (bright) lum[i] = 1 - lum[i];
+            if ((px[i] >>> 24) > 128) { lo = Math.min(lo, lum[i]); hi = Math.max(hi, lum[i]); }
+        }
+        float range = Math.max(0.15f, hi - lo);
+        float[] m = new float[px.length];
+        for (int i = 0; i < px.length; i++) {
+            float v = Math.max(0, Math.min(1, (lum[i] - lo) / range));
+            v = Math.max(0, (v - 0.3f) / 0.7f);
+            m[i] = v * v * (3 - 2 * v) * ((px[i] >>> 24) / 255f);
+        }
+        return m;
+    }
+
+    /**
+     * Oranges Leuchten, das der Form des Logos folgt: Maske weichzeichnen und nur außerhalb
+     * des Logos zeigen. Ergebnis: ARGB-Pixel (Orange mit Deckkraft).
+     */
+    static int[] halo(float[] m, int width, int radius) {
+        int height = m.length / width;
+        float[] a = m.clone(), b = new float[m.length];
+        for (int pass = 0; pass < 3; pass++) {
+            blur(a, b, width, height, radius, true);
+            blur(b, a, width, height, radius, false);
+        }
+        int[] out = new int[m.length];
+        for (int i = 0; i < m.length; i++) {
+            float g = Math.min(1f, a[i] * 2.6f) * (1 - m[i]);
+            out[i] = (Math.round(g * 255) << 24) | 0xFF8A1F;
+        }
+        return out;
+    }
+
+    private static void blur(float[] in, float[] out, int w, int h, int r, boolean horizontal) {
+        int lines = horizontal ? h : w, len = horizontal ? w : h;
+        for (int line = 0; line < lines; line++) {
+            float acc = 0; int count = 0;
+            for (int k = -r; k <= r; k++) {
+                int j = Math.max(0, Math.min(len - 1, k));
+                acc += horizontal ? in[line * w + j] : in[j * w + line]; count++;
+            }
+            for (int i = 0; i < len; i++) {
+                if (horizontal) out[line * w + i] = acc / count; else out[i * w + line] = acc / count;
+                int add = Math.min(len - 1, i + r + 1), rem = Math.max(0, i - r);
+                acc += (horizontal ? in[line * w + add] : in[add * w + line]) - (horizontal ? in[line * w + rem] : in[rem * w + line]);
+            }
+        }
+    }
+
     /**
      * Glas: ohne Hintergrund – nur das Logo wird zu Glas (blau oder orange, leicht
      * durchscheinend) mit Lichtreflex oben und heller Glanzkante. Die Kachel selbst hat

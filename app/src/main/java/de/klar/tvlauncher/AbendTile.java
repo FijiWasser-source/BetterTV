@@ -30,13 +30,18 @@ final class AbendTile extends Drawable {
     private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private boolean focused;
-    /** Nur Umrandung: kein Hintergrund, leuchtender oranger Rand (für die Glas-Symbole). */
+    /** Nur Umrandung: kein Hintergrund, leuchtender oranger Rand (z. B. "Weiter mit"-Knopf). */
     final boolean outline;
+    /** Gar nichts zeichnen: Glas-Logo steht frei auf dem Hintergrund, das Leuchten macht das Logo selbst. */
+    final boolean invisible;
 
     AbendTile(float density, float radiusDp) { this(density, radiusDp, false); }
 
-    AbendTile(float density, float radiusDp, boolean outline) {
-        this.outline = outline;
+    AbendTile(float density, float radiusDp, boolean outline) { this(density, radiusDp, outline, false); }
+
+    AbendTile(float density, float radiusDp, boolean outline, boolean invisible) {
+        this.outline = outline || invisible;
+        this.invisible = invisible;
         this.density = density;
         this.radius = radiusDp < 0 ? -1 : radiusDp * density;
         rim.setStyle(Paint.Style.STROKE);
@@ -70,6 +75,7 @@ final class AbendTile extends Drawable {
 
     @Override public void draw(Canvas c) {
         float rad = radius < 0 ? r.height() / 2f : radius;
+        if (invisible) return;
         if (outline) { drawOutline(c, rad); return; }
         if (focused) c.drawRoundRect(r, rad, rad, glow);
         c.drawRoundRect(r, rad, rad, fill);

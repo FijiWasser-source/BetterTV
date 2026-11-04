@@ -54,10 +54,20 @@ public class PreviewTest {
                 paint.setShader(null);
             }
             paint.setColor(white ? color : Color.WHITE);
-            paint.setTextAlign(Paint.Align.CENTER);
-            paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-            paint.setTextSize(h * 0.2f);
-            c.drawText(name, w / 2, h / 2 + h * 0.07f, paint);
+            // generisches Symbol links (Kreis mit Dreieck), daneben das Wort – Platzhalter, kein echtes Logo
+            float r = h * 0.2f, cx = w * 0.2f, cy = h / 2f;
+            c.drawCircle(cx, cy, r, paint);
+            android.graphics.Path tri = new android.graphics.Path();
+            tri.moveTo(cx - r * 0.35f, cy - r * 0.5f); tri.lineTo(cx + r * 0.55f, cy); tri.lineTo(cx - r * 0.35f, cy + r * 0.5f); tri.close();
+            int keep = paint.getColor();
+            paint.setColor(white ? 0xFFF7F7F7 : color);
+            c.drawPath(tri, paint);
+            paint.setColor(keep);
+            paint.setTextAlign(Paint.Align.LEFT);
+            paint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            paint.setTextSize(h * 0.26f);
+            String word = name.length() > 7 ? name.substring(0, 6) : name;
+            c.drawText(word, w * 0.36f, cy + h * 0.09f, paint);
         }
         @Override public void setAlpha(int a) {}
         @Override public void setColorFilter(ColorFilter f) {}
