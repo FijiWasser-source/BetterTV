@@ -50,13 +50,16 @@ die Höhe der Icons – auf die zweite App bzw. eine **kleine Pixel-Brücke** zw
 und wird dort **im Tempo der Straße** nach links geschoben. Auf der ersten App steht **Schluck** (eigene Figur,
 lange Arme und Beine) mit einem **Staubsauger** und saugt die Teile ein; ab und zu isst er eins („Mampf!“).
 Je höher das Level, desto mehr kommt an und desto schneller saugt er; staut es sich, schwitzt er („ZU VIELE!“).
-Nachts schläft er.
+Nachts (2–5 Uhr) schläft er.
 **App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
 **Musik & Sounds:** ein ruhiger, selbst erzeugter Lo-Fi-Loop und Retro-Effekte für Pixel (Sprung,
 Stern, Stolpern) – alles per `tools/make_audio.py` synthetisiert, keine fremden Aufnahmen. Läuft leise,
 nur solange die Startansicht sichtbar ist, nachts aus; abschaltbar unter *Einstellungen → Musik & Sounds*.
+**Animationen** (*Einstellungen → Animationen*): Voll · Sparsam (Himmel steht still, Figuren mit
+~20 Bildern/s – schont ältere Fernseher) · Aus (Standbild, kein Motorgeräusch). „Einstellungen“ und
+„Alle Apps“ haben Symbole aus dunklem Glas mit orangem Zeichen und Leuchten.
 Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design* (Auswahlliste, aktives Design markiert).
 
 ![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)

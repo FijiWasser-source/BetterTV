@@ -76,6 +76,11 @@ final class Prefs {
 
     void setSoundOn(boolean on) { sp.edit().putBoolean("sound_on", on).apply(); }
 
+    /** "voll", "sparsam" oder "aus". */
+    String animations() { return sp.getString("animations", "voll"); }
+
+    void setAnimations(String a) { sp.edit().putString("animations", a).apply(); }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }

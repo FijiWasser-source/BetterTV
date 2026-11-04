@@ -75,6 +75,10 @@ public class SkyLayer extends View {
     private long last;
     private float nextBirds = 4, nextPlane = 18, nextBalloon = 60, nextShooting = 8;
     private Integer forceHour; // nur Vorschau
+    private boolean animated = true;
+
+    /** false: Himmel steht still (einmal gezeichnet). */
+    public void setAnimated(boolean on) { animated = on; last = SystemClock.uptimeMillis(); invalidate(); }
 
     public SkyLayer(Context c) { this(c, null); }
 
@@ -174,7 +178,7 @@ public class SkyLayer extends View {
         long now = SystemClock.uptimeMillis();
         float dt = Math.min(0.1f, (now - last) / 1000f);
         last = now;
-        if (forceHour == null) step(dt);
+        if (forceHour == null && animated) step(dt);
         float t = now / 1000f;
         int w = getWidth(), h = getHeight();
 
@@ -268,7 +272,7 @@ public class SkyLayer extends View {
             }
         }
 
-        if (running && forceHour == null) postInvalidateDelayed(66); // ~15 Bilder/s reichen für den Himmel
+        if (running && forceHour == null && animated) postInvalidateDelayed(66); // ~15 Bilder/s reichen für den Himmel
     }
 
     private void draw(Canvas c, String[] shape, float x, float y, float size) {

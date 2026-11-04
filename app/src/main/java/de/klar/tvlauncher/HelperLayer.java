@@ -59,6 +59,9 @@ public class HelperLayer extends View {
     private float time, mouthOpen, chewing, armReach, hoseWiggle, sweatPhase;
     private String bubble; private float bubbleAge;
     private Integer forceLevel; private boolean forceSleep, previewPending, previewEat;
+    private int frameDelay = 33; // 0 = angehalten
+
+    public void setFrameDelay(int ms) { frameDelay = ms; last = SystemClock.uptimeMillis(); invalidate(); }
 
     // Geometrie (lokal): Füße von Schluck, Oberkante der Icons, Düse, Brücke
     private float footX, surfaceY, nozzleX;
@@ -246,7 +249,7 @@ public class HelperLayer extends View {
         findSpot();
         if (!hasSpot) { items.clear(); return; }
         if (previewPending) placePreview();
-        if (forceLevel == null && !sleeping()) step(dt);
+        if (forceLevel == null && !sleeping() && frameDelay > 0) step(dt);
 
         if (hasBridge) drawBridge(c);
         drawVacuum(c);
@@ -267,7 +270,7 @@ public class HelperLayer extends View {
             c.drawRect(rect, paint);
         }
         boolean busy = !items.isEmpty() || !crumbs.isEmpty() || chewing > 0;
-        if (running && forceLevel == null) postInvalidateDelayed(busy ? 33 : 90);
+        if (running && forceLevel == null && frameDelay > 0) postInvalidateDelayed(busy ? frameDelay : 90);
     }
 
     /** Kleine Pixel-Brücke zwischen der ersten und zweiten App, auf Höhe der Icons. */

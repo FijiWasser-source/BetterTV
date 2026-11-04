@@ -250,8 +250,11 @@ public class PreviewTest {
                     white ? new FakeBanner(NAMES[i], logo[i], true) : new FakeBanner(NAMES[i], COLORS[i]), null,
                     new android.content.Intent(), true));
         }
+        float dd = paparazzi.getContext().getResources().getDisplayMetrics().density;
         list.add(new AppEntry("klar:all", "Alle Apps", "", null,
-                paparazzi.getContext().getDrawable(R.drawable.ic_apps_color), null, false));
+                new GlassGlyph(paparazzi.getContext().getDrawable(R.drawable.ic_apps), dd), null, false));
+        list.add(new AppEntry("klar:settings", "Einstellungen", "", null,
+                new GlassGlyph(paparazzi.getContext().getDrawable(R.drawable.ic_settings), dd), null, false));
         adapter.submit(list);
 
         TextView greeting = root.findViewById(R.id.greeting);

@@ -142,6 +142,16 @@ public class Mascot extends View {
     private long nextEmote, emoteStart; private boolean emoteOn;
     private Emote emote = Emote.NONE;
     private Boolean forceNight; // nur Vorschau
+    /** Bildabstand in ms (33 = voll, 50 = sparsam); 0 = angehalten (Standbild). */
+    private int frameDelay = 33;
+
+    public void setFrameDelay(int ms) {
+        frameDelay = ms;
+        lastFrame = SystemClock.uptimeMillis();
+        invalidate();
+    }
+
+    public boolean isPaused() { return frameDelay == 0; }
 
     public Mascot(Context c) { this(c, null); }
 
@@ -252,7 +262,7 @@ public class Mascot extends View {
     private boolean night() {
         if (forceNight != null) return forceNight;
         int h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        return h >= 23 || h < 6;
+        return h >= 2 && h < 5;   // Nachtruhe nur von 2 bis 5 Uhr
     }
 
     private void showEmote(Emote e) { emote = e; emoteStart = SystemClock.uptimeMillis(); emoteOn = true; }
@@ -536,7 +546,7 @@ public class Mascot extends View {
         lastFrame = now;
         boolean sleeping = night();
         float trackCells = getWidth() / cell;
-        if (forceNight == null) step(dt, now, sleeping, trackCells);
+        if (forceNight == null && frameDelay > 0) step(dt, now, sleeping, trackCells);
 
         float ground = getHeight() - GROUND_FROM_BOTTOM * cell;
         drawBackdrop(canvas, ground);
@@ -589,7 +599,7 @@ public class Mascot extends View {
             drawEmote(canvas, now, ox + 14 * cell + cell * 0.5f, oy - cell * 2.5f);
         }
 
-        if (running) postInvalidateDelayed(33); // ~30 Bilder/s reichen und schonen den TV
+        if (running && frameDelay > 0) postInvalidateDelayed(frameDelay); // voll ~30, sparsam ~20 Bilder/s
     }
 
     /** Ferne Hügel, die langsamer vorbeiziehen (Tiefe). Wolken & Co. zeichnet der SkyLayer. */

@@ -140,10 +140,35 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
         helper = findViewById(R.id.helper);
+        applyAnimations();
         helper.attach(mascot, dockList, new HelperLayer.Events() {
             @Override public void onSuck() { sound.suck(); }
             @Override public void onCrunch() { sound.crunch(); }
         });
+    }
+
+    /** Animationsstufe: voll / sparsam (Himmel steht, weniger Bilder) / aus (Standbild). */
+    private void applyAnimations() {
+        if (!abend) return;
+        String mode = prefs.animations();
+        int delay = "aus".equals(mode) ? 0 : "sparsam".equals(mode) ? 50 : 33;
+        mascot.setFrameDelay(delay);
+        helper.setFrameDelay(delay);
+        ((SkyLayer) findViewById(R.id.sky)).setAnimated("voll".equals(mode));
+        if (sound != null) {
+            if (delay == 0 || mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
+        }
+    }
+
+    private void chooseAnimations() {
+        String current = prefs.animations();
+        Sheet sheet = new Sheet(this, "Animationen");
+        String[][] options = {{"voll", "Voll"}, {"sparsam", "Sparsam (schont ältere Fernseher)"}, {"aus", "Aus (Standbild)"}};
+        for (String[] o : options) {
+            Runnable pick = () -> { prefs.setAnimations(o[0]); applyAnimations(); };
+            if (o[0].equals(current)) sheet.primary("✓  " + o[1], pick); else sheet.button(o[1], pick);
+        }
+        sheet.button("Abbrechen", null).show();
     }
 
     /** "Weiter mit"-Knopf im Stil der Kacheln (bei Glas-Symbolen nur Umrandung). */
@@ -177,7 +202,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         greeting.setText(greetingFor(now.get(java.util.Calendar.HOUR_OF_DAY)));
         if (sound != null && now.get(java.util.Calendar.SECOND) == 0) {
             sound.startMusic(mascot.isSleeping());
-            if (mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
+            if (mascot.isSleeping() || mascot.isPaused()) sound.stopEngine(); else sound.startEngine();
         }
     }
 
@@ -207,7 +232,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         if (abend) main.post(clockTick);
         if (sound != null) {
             sound.startMusic(mascot.isSleeping());
-            if (mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
+            if (mascot.isSleeping() || mascot.isPaused()) sound.stopEngine(); else sound.startEngine();
         }
     }
 
@@ -265,10 +290,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         List<AppEntry> dock = AppLoader.dock(all);
         if (abend) {
             // "Alle Apps" und "Einstellungen" als letzte Kacheln
+            float dens = getResources().getDisplayMetrics().density;
             dock.add(new AppEntry(KEY_ALL, getString(R.string.all_apps), "", null,
-                    getResources().getDrawable(R.drawable.ic_apps_color), null, false));
+                    new GlassGlyph(getResources().getDrawable(R.drawable.ic_apps), dens), null, false));
             dock.add(new AppEntry(KEY_SETTINGS, getString(R.string.settings), "", null,
-                    getResources().getDrawable(R.drawable.ic_settings_large), null, false));
+                    new GlassGlyph(getResources().getDrawable(R.drawable.ic_settings), dens), null, false));
             AppEntry last = null;
             for (AppEntry e : all) if (e.packageName.equals(prefs.lastLaunched())) last = e;
             continueButton.setVisibility(last == null ? View.GONE : View.VISIBLE);
@@ -334,12 +360,13 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
         new Sheet(this, getString(R.string.settings))
                 .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)"), this::chooseDesign)
+                .button("Animationen: " + ("aus".equals(prefs.animations()) ? "Aus" : "sparsam".equals(prefs.animations()) ? "Sparsam" : "Voll"), this::chooseAnimations)
                 .button("Musik & Sounds: " + (prefs.soundOn() ? "an" : "aus") + " – wechseln", () -> {
                     prefs.setSoundOn(!prefs.soundOn());
                     if (sound != null) {
                         sound.setEnabled(prefs.soundOn());
                         sound.startMusic(mascot != null && mascot.isSleeping());
-                        if (prefs.soundOn() && mascot != null && !mascot.isSleeping()) sound.startEngine();
+                        if (prefs.soundOn() && mascot != null && !mascot.isSleeping() && !mascot.isPaused()) sound.startEngine();
                     }
                 })
                 .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()), this::chooseIconStyle)
