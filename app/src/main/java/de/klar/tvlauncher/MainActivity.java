@@ -132,7 +132,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(first + "\n" + second);
         int lastWord = sb.toString().lastIndexOf(' ') + 1;
         sb.setSpan(new android.text.style.ForegroundColorSpan(AbendTile.ORANGE), lastWord, sb.length(), 0);
-        sb.setSpan(new android.text.style.ForegroundColorSpan(0xFFBFE4FF), 0, first.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(0xFF8FB4FF), 0, first.length(), 0); // wie das Datum
         return sb;
     }
 

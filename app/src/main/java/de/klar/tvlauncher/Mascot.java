@@ -157,13 +157,15 @@ public class Mascot extends View {
 
         float w = 14 * cell, h = 12 * cell;
         float ox = (getWidth() - w) / 2f;
-        float ground = getHeight() - cell * 6f; // Boden etwas über dem unteren Rand -> Figur mittig im freien Raum
+        float ground = getHeight() - cell * 7.5f; // Boden etwas über dem unteren Rand -> Figur mittig im freien Raum
         float oy = ground - h - hop + bob;
 
-        // Schatten am Boden (wird beim Hüpfen kleiner)
-        paint.setColor(0x33000000);
+        drawPlatform(canvas, getWidth() / 2f, ground);
+
+        // Schatten auf dem Sockel (wird beim Hüpfen kleiner)
+        paint.setColor(0x4D000000);
         float sw = w * (0.75f - hop / (cell * 20));
-        rect.set(getWidth() / 2f - sw / 2, ground + cell * 0.3f, getWidth() / 2f + sw / 2, ground + cell * 1.2f);
+        rect.set(getWidth() / 2f - sw / 2, ground - cell * 0.5f, getWidth() / 2f + sw / 2, ground + cell * 0.7f);
         canvas.drawOval(rect, paint);
 
         // Körper
@@ -239,6 +241,48 @@ public class Mascot extends View {
         drawEmote(canvas, now, ox + w + cell * 0.5f, oy - cell * 2.5f);
 
         if (running) postInvalidateDelayed(33); // ~30 Bilder/s reichen und schonen den TV
+    }
+
+    // Sockel: Ellipse (Oberseite) mit Seitenwand, in Grautönen und Pixel-Kanten
+    private static final float PLATFORM_W = 24f, PLATFORM_TOP = 7f, PLATFORM_DEPTH = 3f;
+
+    private void drawPlatform(Canvas canvas, float cx, float ground) {
+        int cols = (int) PLATFORM_W, rows = (int) PLATFORM_TOP;
+        float left = cx - cols * cell / 2f;
+        float top = ground - rows * cell / 2f;
+        // Breite jeder Ellipsen-Zeile (in Zellen, gerade Anzahl -> symmetrisch)
+        int[] widths = new int[rows];
+        for (int r = 0; r < rows; r++) {
+            float y = (r + 0.5f - rows / 2f) / (rows / 2f);
+            int w = Math.round(cols * (float) Math.sqrt(Math.max(0, 1 - y * y)));
+            widths[r] = Math.max(2, w - (w % 2));
+        }
+        // Seitenwand: untere Ellipsenhälfte, um die Tiefe nach unten versetzt
+        for (int d = (int) PLATFORM_DEPTH; d >= 1; d--) {
+            for (int r = rows / 2; r < rows; r++) {
+                // Seitenwand dunkler, nach unten noch dunkler
+                paint.setColor(d == (int) PLATFORM_DEPTH ? 0xFF2E3035 : d == 1 ? 0xFF4A4D54 : 0xFF3C3E44);
+                row(canvas, left, top + (r + d) * cell, cols, widths[r]);
+            }
+        }
+        // Oberseite: hell, oben mit Lichtkante, zur Vorderkante etwas dunkler
+        for (int r = 0; r < rows; r++) {
+            paint.setColor(r == 0 ? 0xFFA3A7AE : r <= rows / 2 ? 0xFF868A92 : 0xFF767A82);
+            row(canvas, left, top + r * cell, cols, widths[r]);
+        }
+        // feine Lichtkante an den oberen Rändern
+        paint.setColor(0xFFB3B7BE);
+        int w0 = widths[0], w1 = widths[1];
+        px(canvas, left + (cols - w1) / 2f * cell, top + cell);
+        px(canvas, left + (cols + w1) / 2f * cell - cell, top + cell);
+        rect.set(left + (cols - w0) / 2f * cell, top, left + (cols + w0) / 2f * cell, top + cell * 0.35f);
+        canvas.drawRect(rect, paint);
+    }
+
+    private void row(Canvas canvas, float left, float y, int cols, int width) {
+        float x0 = left + (cols - width) / 2f * cell;
+        rect.set(Math.round(x0), Math.round(y), Math.round(x0 + width * cell) + 0.5f, Math.round(y + cell) + 0.5f);
+        canvas.drawRect(rect, paint);
     }
 
     private boolean emoteActive(long now) {
