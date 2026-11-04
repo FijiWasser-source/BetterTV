@@ -36,6 +36,9 @@ public class RemoteHttpTest {
         public String key(String name) { keys.add(name); return psk.isEmpty() && name.equals("up") ? "needs_psk" : "ok"; }
         public boolean hasPsk() { return !psk.isEmpty(); }
         public void setPsk(String p) { psk = p; }
+        String calendar = "";
+        public boolean hasCalendar() { return !calendar.isEmpty(); }
+        public void setCalendarUrl(String u) { calendar = u; }
         public void showPin(String p) { pin = p; }
         public boolean isToken(String t) { return tokens.contains(t); }
         public void addToken(String t) { tokens.add(t); }
@@ -153,5 +156,16 @@ public class RemoteHttpTest {
         } finally {
             second.stop();
         }
+    }
+
+    @Test public void calendarUrlIsStoredAndValidated() throws Exception {
+        String token = pair();
+        assertEquals(200, call("POST", "/api/calendar", "{\"url\":\" webcal://calendar.google.com/calendar/ical/x%40gmail.com/private-abc/basic.ics \"}", token).status);
+        assertEquals("https://calendar.google.com/calendar/ical/x%40gmail.com/private-abc/basic.ics", fake.calendar);
+        assertTrue(new JSONObject(call("GET", "/api/status", null, token).body).getBoolean("calendar"));
+        assertEquals(400, call("POST", "/api/calendar", "{\"url\":\"file:///etc/passwd\"}", token).status);
+        assertEquals(401, call("POST", "/api/calendar", "{\"url\":\"\"}", null).status);
+        assertEquals(200, call("POST", "/api/calendar", "{\"url\":\"\"}", token).status);
+        assertEquals("", fake.calendar);
     }
 }

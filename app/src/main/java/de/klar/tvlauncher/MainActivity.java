@@ -140,6 +140,9 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
         helper = findViewById(R.id.helper);
+        dayPanel = findViewById(R.id.day_panel);
+        DayPanel.style(dayPanel);
+        prefs.raw().registerOnSharedPreferenceChangeListener(calendarChanged);
         applyAnimations();
         applyGameWeather();
         helper.attach(mascot, dockList, new HelperLayer.Events() {
@@ -250,6 +253,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         pixelClock.tick();
         pixelDate.setText(new java.text.SimpleDateFormat("EEEE, d. MMMM", java.util.Locale.GERMAN).format(now.getTime()));
         greeting.setText(greetingFor(now.get(java.util.Calendar.HOUR_OF_DAY)));
+        if (now.get(java.util.Calendar.SECOND) == 0) updateDay(false);
         if (sound != null && now.get(java.util.Calendar.SECOND) == 0) {
             sound.startMusic(mascot.isSleeping());
             if (mascot.isSleeping() || mascot.isPaused()) sound.stopEngine(); else sound.startEngine();
@@ -279,7 +283,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         main.removeCallbacks(weatherTick);
         main.post(weatherTick);
         main.removeCallbacks(clockTick);
-        if (abend) main.post(clockTick);
+        if (abend) { main.post(clockTick); updateDay(false); }
         if (sound != null) {
             sound.startMusic(mascot.isSleeping());
             if (mascot.isSleeping() || mascot.isPaused()) sound.stopEngine(); else sound.startEngine();
@@ -298,6 +302,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     protected void onDestroy() {
         super.onDestroy();
         io.shutdownNow();
+        prefs.raw().unregisterOnSharedPreferenceChangeListener(calendarChanged);
         if (sound != null) sound.release();
     }
 
@@ -422,6 +427,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 })
                 .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()), this::chooseIconStyle)
                 .button("Wetter-Ort: " + city, this::askCity)
+                .button("Tagesübersicht: " + overviewLabel(prefs.overview()), this::chooseOverview)
                 .button("Handy-Fernbedienung", this::showRemoteInfo)
                 .button("Hintergrundbild", this::showWallpaperInfo)
                 .button("Ausgeblendete Apps (" + prefs.hidden().size() + ")", this::showHidden)
@@ -595,6 +601,95 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                     if (!weatherShown) showWeather("", getString(R.string.weather_error));
                 });
             }
+        });
+    }
+
+    // --- Tagesübersicht ("HEUTE"): Tageswetter + Termine ---------------------
+
+    private static final long DAY_REFRESH_MS = 15 * 60 * 1000L;
+    private static final int MAX_ICS_BYTES = 2 * 1024 * 1024;
+
+    private View dayPanel;
+    private Weather.Daily daily;
+    private java.util.List<CalendarIcs.Event> dayEvents; // null = kein Kalender
+    private boolean calendarError, dayLoading;
+    private long dayFetchedFor, dayFetchedAt;
+
+    private final android.content.SharedPreferences.OnSharedPreferenceChangeListener calendarChanged = (sp, key) -> {
+        if ("calendar_url".equals(key) || "overview".equals(key)) main.post(() -> updateDay(true));
+    };
+
+    private static String overviewLabel(String mode) {
+        return "immer".equals(mode) ? "Immer" : "aus".equals(mode) ? "Aus" : "Morgens";
+    }
+
+    private void chooseOverview() {
+        String current = prefs.overview();
+        Sheet sheet = new Sheet(this, "Tagesübersicht")
+                .message("Wetter für den Tag und deine Termine von heute."
+                        + (prefs.calendarUrl().isEmpty()
+                        ? "\n\nKalender verbinden: in der Handy-App auf ⚙︎ tippen und die iCal-Adresse "
+                        + "aus Google Kalender einfügen." : "\n\nKalender ist verbunden."));
+        String[][] options = {{"morgens", "Morgens (5 bis 11 Uhr)"}, {"immer", "Immer"}, {"aus", "Aus"}};
+        for (String[] o : options) {
+            Runnable pick = () -> prefs.setOverview(o[0]);
+            if (o[0].equals(current)) sheet.primary("✓  " + o[1], pick); else sheet.button(o[1], pick);
+        }
+        if (!prefs.calendarUrl().isEmpty()) {
+            sheet.button("Kalender trennen", () -> prefs.setCalendarUrl(""));
+        }
+        sheet.button("Abbrechen", null).show();
+    }
+
+    private void updateDay(boolean force) {
+        if (!abend || dayPanel == null) return;
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        boolean show = DayPanel.visible(prefs.overview(), c.get(java.util.Calendar.HOUR_OF_DAY));
+        dayPanel.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (!show) return;
+        long now = c.getTimeInMillis();
+        c.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        c.set(java.util.Calendar.MINUTE, 0);
+        c.set(java.util.Calendar.SECOND, 0);
+        c.set(java.util.Calendar.MILLISECOND, 0);
+        long dayStart = c.getTimeInMillis();
+        c.add(java.util.Calendar.DAY_OF_MONTH, 1);
+        long dayEnd = c.getTimeInMillis();
+        if (dayStart != dayFetchedFor) { daily = null; if (dayEvents != null) dayEvents = new java.util.ArrayList<>(); }
+        if (force || dayStart != dayFetchedFor || now - dayFetchedAt > DAY_REFRESH_MS) fetchDay(dayStart, dayEnd);
+        DayPanel.bind(dayPanel, daily, dayEvents, calendarError, now);
+    }
+
+    private void fetchDay(long dayStart, long dayEnd) {
+        if (dayLoading) return;
+        dayLoading = true;
+        dayFetchedFor = dayStart;
+        dayFetchedAt = System.currentTimeMillis();
+        boolean loc = prefs.hasLocation();
+        double lat = prefs.lat(), lon = prefs.lon();
+        String url = prefs.calendarUrl();
+        io.execute(() -> {
+            Weather.Daily d = null;
+            if (loc) { try { d = Weather.daily(lat, lon); } catch (Exception ignored) {} }
+            java.util.List<CalendarIcs.Event> ev = null;
+            boolean err = false;
+            if (!url.isEmpty()) {
+                try {
+                    ev = CalendarIcs.eventsBetween(Weather.fetch(url, MAX_ICS_BYTES), dayStart, dayEnd, java.util.TimeZone.getDefault());
+                } catch (Exception e) {
+                    err = true;
+                }
+            }
+            final Weather.Daily fd = d; final java.util.List<CalendarIcs.Event> fev = ev; final boolean ferr = err;
+            main.post(() -> {
+                dayLoading = false;
+                if (fd != null || !loc) daily = fd;
+                if (url.isEmpty()) { dayEvents = null; calendarError = false; }
+                else if (fev != null) { dayEvents = fev; calendarError = false; }
+                else if (ferr && dayEvents == null) calendarError = true; // alte Termine behalten
+                if (!url.equals(prefs.calendarUrl())) { updateDay(true); return; } // inzwischen geändert
+                updateDay(false);
+            });
         });
     }
 

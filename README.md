@@ -71,7 +71,20 @@ Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design* (Ausw
 
 Schrift: Nunito ExtraBold, SIL Open Font License 1.1 (`app/src/main/assets/fonts/Nunito-OFL.txt`).
 
-## Bedienung
+## Tagesübersicht „HEUTE“ (ab 5.5)
+
+Morgens von 5 bis 11 Uhr erscheint rechts unter der Uhr ein Feld mit dem Wetter für den
+ganzen Tag (Tiefst-/Höchstwert, Regenrisiko) und deinen Terminen von heute. Ganztägige
+Termine stehen oben, vergangene verschwinden, ab fünf Terminen steht „+ N weitere“ da.
+Einstellen unter ⚙︎ → **Tagesübersicht**: Morgens / Immer / Aus.
+
+**Google-Kalender verbinden:** Am Computer calendar.google.com → ⚙︎ Einstellungen → links den
+Kalender wählen → ganz unten **Privatadresse im iCal-Format** kopieren. Dann in der
+Handy-Fernbedienung auf ⚙︎ tippen und die Adresse unter „Google-Kalender“ einfügen.
+Die Adresse ist geheim und wird nur auf dem Fernseher gespeichert. Klar lädt den Kalender
+alle 15 Minuten neu, solange die Übersicht zu sehen ist. Jeder iCal-Kalender funktioniert,
+nicht nur Google (auch iCloud „Öffentlicher Kalender“ oder Outlook „ICS-Link“).
+
 
 | Wo | Taste | Funktion |
 |---|---|---|

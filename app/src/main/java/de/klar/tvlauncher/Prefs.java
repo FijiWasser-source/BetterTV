@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 /** Lokale Einstellungen. Nichts davon verlässt das Gerät. */
-final class Prefs {
+public final class Prefs {
     private static final String PINNED = "pinned";
     private static final String HIDDEN = "hidden";
     private static final String CITY = "city";
@@ -21,7 +21,7 @@ final class Prefs {
 
     private final SharedPreferences sp;
 
-    Prefs(Context context) {
+    public Prefs(Context context) {
         sp = context.getSharedPreferences("klar", Context.MODE_PRIVATE);
     }
 
@@ -85,6 +85,18 @@ final class Prefs {
     String gameWeather() { return sp.getString("game_weather", "echt"); }
 
     void setGameWeather(String w) { sp.edit().putString("game_weather", w).apply(); }
+
+    /** Geheime iCal-Adresse des Kalenders ("" = keiner). */
+    public String calendarUrl() { return sp.getString("calendar_url", ""); }
+
+    public void setCalendarUrl(String url) { sp.edit().putString("calendar_url", url).apply(); }
+
+    /** Tagesübersicht: "morgens" (5–11 Uhr), "immer" oder "aus". */
+    String overview() { return sp.getString("overview", "morgens"); }
+
+    void setOverview(String o) { sp.edit().putString("overview", o).apply(); }
+
+    SharedPreferences raw() { return sp; }
 
     String city() { return sp.getString(CITY, ""); }
 

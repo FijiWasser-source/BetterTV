@@ -40,6 +40,9 @@ public final class RemoteHttp {
         String key(String name);
         boolean hasPsk();
         void setPsk(String psk);
+        boolean hasCalendar();
+        /** Geheime iCal-Adresse (Google Kalender); leer = trennen. Bleibt nur auf dem Fernseher. */
+        void setCalendarUrl(String url);
         void showPin(String pin);
         boolean isToken(String token);
         void addToken(String token);
@@ -228,7 +231,7 @@ public final class RemoteHttp {
 
         switch (r.method + " " + r.path) {
             case "GET /api/status":
-                return json(200, obj("name", backend.tvName(), "psk", backend.hasPsk()));
+                return json(200, obj("name", backend.tvName(), "psk", backend.hasPsk(), "calendar", backend.hasCalendar()));
             case "GET /api/apps":
                 return json(200, backend.appsJson());
             case "GET /api/icon": {
@@ -251,6 +254,12 @@ public final class RemoteHttp {
             case "POST /api/psk":
                 backend.setPsk(r.json().optString("psk").trim());
                 return ok();
+            case "POST /api/calendar": {
+                String url = calendarUrl(r.json().optString("url"));
+                if (url == null) return json(400, "{\"error\":\"url\"}");
+                backend.setCalendarUrl(url);
+                return ok();
+            }
             case "POST /api/unpair":
                 backend.removeToken(token);
                 return ok();
@@ -314,6 +323,16 @@ public final class RemoteHttp {
     }
 
     private static Response ok() { return json(200, "{\"ok\":true}"); }
+
+    /** webcal:// wird zu https://; nur http(s), höchstens 2048 Zeichen. null = ungültig. */
+    static String calendarUrl(String raw) {
+        String u = raw == null ? "" : raw.trim();
+        if (u.isEmpty()) return "";
+        if (u.regionMatches(true, 0, "webcal://", 0, 9)) u = "https://" + u.substring(9);
+        if (u.length() > 2048 || u.matches(".*\\s.*")) return null;
+        if (!u.regionMatches(true, 0, "https://", 0, 8) && !u.regionMatches(true, 0, "http://", 0, 7)) return null;
+        return u;
+    }
 
     private static Response json(int status, JSONObject o) { return json(status, o.toString()); }
 

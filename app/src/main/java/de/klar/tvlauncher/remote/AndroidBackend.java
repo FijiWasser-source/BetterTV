@@ -187,6 +187,10 @@ final class AndroidBackend implements RemoteHttp.Backend {
 
     @Override public void setPsk(String psk) { sp.edit().putString("psk", psk).apply(); }
 
+    @Override public boolean hasCalendar() { return !new de.klar.tvlauncher.Prefs(context).calendarUrl().isEmpty(); }
+
+    @Override public void setCalendarUrl(String url) { new de.klar.tvlauncher.Prefs(context).setCalendarUrl(url); }
+
     @Override public void showPin(String pin) {
         main.post(() -> {
             String text = "Handy-Fernbedienung koppeln\nPIN: " + pin;

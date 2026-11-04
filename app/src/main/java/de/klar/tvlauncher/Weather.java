@@ -32,6 +32,29 @@ final class Weather {
         Current(double temperature, int code) { this.temperature = temperature; this.code = code; }
     }
 
+    /** Vorhersage für heute: Höchst-/Tiefstwert, Wettercode, Regenwahrscheinlichkeit (%). */
+    static final class Daily {
+        final double max, min; final int code, rain;
+        Daily(double max, double min, int code, int rain) { this.max = max; this.min = min; this.code = code; this.rain = rain; }
+    }
+
+    static Daily daily(double lat, double lon) throws IOException {
+        String url = String.format(Locale.US,
+                "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
+                        + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
+                        + "&forecast_days=1&timezone=auto", lat, lon);
+        try {
+            JSONObject d = new JSONObject(get(url)).getJSONObject("daily");
+            JSONArray rain = d.optJSONArray("precipitation_probability_max");
+            return new Daily(d.getJSONArray("temperature_2m_max").getDouble(0),
+                    d.getJSONArray("temperature_2m_min").getDouble(0),
+                    d.getJSONArray("weather_code").getInt(0),
+                    rain == null || rain.isNull(0) ? -1 : rain.getInt(0));
+        } catch (org.json.JSONException e) {
+            throw new IOException("Ungültige Antwort", e);
+        }
+    }
+
     /** Ort per Name suchen. Liefert null, wenn nichts gefunden wurde. */
     static Place geocode(String query) throws IOException {
         String url = "https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&format=json&name="
@@ -83,6 +106,30 @@ final class Weather {
             case 95: return "Gewitter";
             case 96: case 99: return "Gewitter mit Hagel";
             default: return "";
+        }
+    }
+
+    /** Text einer Adresse laden, höchstens maxBytes (z. B. ein iCal-Kalender). */
+    static String fetch(String url, int maxBytes) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(15000);
+        conn.setInstanceFollowRedirects(true);
+        try {
+            int status = conn.getResponseCode();
+            if (status != 200) throw new IOException("HTTP " + status);
+            try (InputStream in = conn.getInputStream()) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    if (out.size() > maxBytes) throw new IOException("Zu groß");
+                }
+                return out.toString(StandardCharsets.UTF_8.name());
+            }
+        } finally {
+            conn.disconnect();
         }
     }
 

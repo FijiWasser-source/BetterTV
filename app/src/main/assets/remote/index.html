@@ -133,6 +133,10 @@
   .sheet { width: 100%; max-width: 460px; border-radius: 30px; padding: 24px 18px 18px; background: #2C2F34; border: 1.5px solid rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.45); color: #fff; }
   .sheet h3 { margin: 0 0 6px; font-family: "KlarRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: var(--blue); }
   .sheet p { margin: 0 0 16px; font-size: 16px; text-align: center; }
+  .sheet { max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .sheet .part { margin-top: 26px; padding-top: 20px; border-top: 1.5px solid rgba(255,255,255,.1); }
+  .sheet .small { font-size: 13px; color: #A9ADB5; margin: 10px 0 0; }
+  .sheet .ok { color: #9BE3A8; }
   .sheet ol { margin: 0 0 16px; padding-left: 22px; font-size: 15px; line-height: 1.45; }
   .btn { display: block; width: 100%; height: 52px; border-radius: 14px; font-weight: 700; margin-top: 10px; background: linear-gradient(180deg, var(--key-hi), var(--key-lo)); color: var(--ink); border: 1.5px solid rgba(255,138,31,.75); box-shadow: 0 0 10px rgba(255,138,31,.25); }
   .btn.primary { background: var(--orange); color: #fff; border-color: #FFB066; }
@@ -226,6 +230,23 @@
     </ol>
     <input class="field text" id="psk" type="password" autocomplete="off" placeholder="Sony-Steuercode" aria-label="Sony-Steuercode">
     <button class="btn primary" id="btn-psk">Speichern</button>
+
+    <div class="part">
+      <h3>Google-Kalender</h3>
+      <p id="cal-state">Für die Tagesübersicht am Fernseher: Wetter und deine Termine von heute.</p>
+      <ol>
+        <li>Am Computer <b>calendar.google.com</b> öffnen → ⚙︎ <b>Einstellungen</b></li>
+        <li>Links unter „Einstellungen für meine Kalender“ deinen Kalender wählen</li>
+        <li>Ganz unten: <b>Privatadresse im iCal-Format</b> kopieren</li>
+        <li>Hier einfügen (z. B. per Notiz oder AirDrop aufs Handy):</li>
+      </ol>
+      <input class="field text" id="cal" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://calendar.google.com/…/basic.ics" aria-label="iCal-Adresse">
+      <div class="err" id="cal-err" role="alert"></div>
+      <button class="btn primary" id="btn-cal">Kalender verbinden</button>
+      <button class="btn" id="btn-cal-off" hidden>Kalender trennen</button>
+      <p class="small">Die Adresse wird nur auf deinem Fernseher gespeichert.</p>
+    </div>
+
     <button class="btn" id="btn-close">Fertig</button>
     <button class="btn" id="btn-unpair" style="color:#FFB4AE">Dieses Handy trennen</button>
   </div>
@@ -309,6 +330,7 @@
       const st = await (await api('api/status')).json();
       $('tvname').textContent = st.name || 'Fernseher';
       if (!st.psk) setTimeout(() => toast('Für Pfeile & OK: Sony-Code unter ⚙︎ eintragen'), 600);
+      showCalendar(!!st.calendar);
     } catch (e) { return; }
     loadApps();
   }
@@ -441,6 +463,30 @@
     if (!psk) return;
     try { await api('api/psk', { psk }); $('psk').value = ''; $('settings').classList.remove('show'); toast('Gespeichert – probier die Pfeile aus'); } catch (e) {}
   });
+  function showCalendar(on) {
+    const st = $('cal-state');
+    st.textContent = on ? '✓ Verbunden – deine Termine erscheinen morgens am Fernseher.'
+                        : 'Für die Tagesübersicht am Fernseher: Wetter und deine Termine von heute.';
+    st.classList.toggle('ok', on);
+    $('btn-cal').textContent = on ? 'Anderen Kalender verbinden' : 'Kalender verbinden';
+    $('btn-cal-off').hidden = !on;
+  }
+  async function saveCalendar(url) {
+    $('cal-err').textContent = '';
+    try {
+      const res = await api('api/calendar', { url });
+      if (!res.ok) { $('cal-err').textContent = 'Das ist keine gültige Kalender-Adresse.'; return; }
+      $('cal').value = '';
+      showCalendar(!!url);
+      toast(url ? 'Kalender verbunden' : 'Kalender getrennt');
+    } catch (e) {}
+  }
+  $('btn-cal').addEventListener('click', () => {
+    const url = $('cal').value.trim();
+    if (!url) { $('cal-err').textContent = 'Bitte zuerst die iCal-Adresse einfügen.'; return; }
+    saveCalendar(url);
+  });
+  $('btn-cal-off').addEventListener('click', () => saveCalendar(''));
   $('btn-unpair').addEventListener('click', async () => {
     try { await api('api/unpair', {}); } catch (e) {}
     token = null; store.set('klar-token', null);

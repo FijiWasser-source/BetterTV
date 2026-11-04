@@ -243,6 +243,15 @@ public class PreviewTest {
         snapshotAbend(IconStyle.DARK, name);
         pendingWeather = -1;
     }
+    private boolean pendingMorning;
+
+    /** Morgens: Tagesübersicht mit Wetter und Terminen. */
+    @Test public void morgen() {
+        pendingMorning = true;
+        snapshotAbend(IconStyle.DARK, "morgen");
+        pendingMorning = false;
+    }
+
     @Test public void abendGlasOrange() { snapshotAbend(IconStyle.GLASS_ORANGE, "abend_glas_orange"); }
 
     private void snapshotAbend(String style, String name) {
@@ -285,6 +294,24 @@ public class PreviewTest {
         }
         cl.setTypeface(Fonts.rounded(paparazzi.getContext()));
         cl.setText("Netflix");
+        if (pendingMorning) {
+            greeting.setText(MainActivity.greetingFor(7));
+            ((PixelText) root.findViewById(R.id.pixel_clock)).setText("07:42");
+            ((PixelText) root.findViewById(R.id.pixel_weather)).setText("4° Bedeckt");
+            View panel = root.findViewById(R.id.day_panel);
+            panel.setVisibility(View.VISIBLE);
+            DayPanel.style(panel);
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.set(2026, 10, 5, 0, 0, 0);
+            long day = c.getTimeInMillis(), h = 3_600_000L;
+            List<CalendarIcs.Event> ev = new ArrayList<>();
+            ev.add(new CalendarIcs.Event(day, day + 24 * h, true, "Geburtstag Oma"));
+            ev.add(new CalendarIcs.Event(day + 8 * h + 30 * 60_000L, day + 9 * h, false, "Zahnarzt Dr. Berger"));
+            ev.add(new CalendarIcs.Event(day + 12 * h + 30 * 60_000L, day + 13 * h + 30 * 60_000L, false, "Mittagessen mit Lena"));
+            ev.add(new CalendarIcs.Event(day + 18 * h, day + 19 * h, false, "Fußball Training"));
+            ev.add(new CalendarIcs.Event(day + 20 * h, day + 21 * h, false, "Serienabend"));
+            DayPanel.bind(panel, new Weather.Daily(11.4, 3.6, 3, 40), ev, false, day + 7 * h + 42 * 60_000L);
+        }
 
         layout(root);
         root.findViewById(R.id.wallpaper).setBackground(AbendBackground.create(paparazzi.getContext()));

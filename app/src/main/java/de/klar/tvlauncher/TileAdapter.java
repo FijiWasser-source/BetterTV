@@ -108,7 +108,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         if (abend) {
             boolean special = e.launchIntent == null; // "Alle Apps", "Einstellungen" behalten ihren Namen
             if (h.label != null) {
-                h.label.setVisibility(glass && !special ? View.GONE : View.VISIBLE);
+                h.label.setVisibility(free && !special ? View.GONE : View.VISIBLE); // ohne Kachel: nur das Symbol
                 h.label.setTextColor(free ? 0xFFFFFFFF : AbendTile.INK);
             }
             if (h.number != null) h.number.setVisibility(free ? View.GONE : View.VISIBLE); // ohne Kachelecke keine Nummer (Tasten 1–9 gehen trotzdem)
