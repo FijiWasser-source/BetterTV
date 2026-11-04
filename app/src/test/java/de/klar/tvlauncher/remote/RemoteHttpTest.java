@@ -29,7 +29,8 @@ public class RemoteHttpTest {
         String psk = "";
         public String tvName() { return "KD-65XD7505"; }
         public String appsJson() { return "{\"apps\":[{\"pkg\":\"com.netflix.ninja\",\"label\":\"Netflix\",\"dock\":true}]}"; }
-        public byte[] icon(String pkg) { return "com.netflix.ninja".equals(pkg) ? new byte[]{(byte) 0x89, 'P', 'N', 'G'} : null; }
+        String lastStyle;
+        public byte[] icon(String pkg, String style) { lastStyle = style; return "com.netflix.ninja".equals(pkg) ? new byte[]{(byte) 0x89, 'P', 'N', 'G'} : null; }
         public byte[] wallpaper() { return null; }
         public boolean launch(String pkg) { launched.add(pkg); return pkg.equals("com.netflix.ninja"); }
         public String key(String name) { keys.add(name); return psk.isEmpty() && name.equals("up") ? "needs_psk" : "ok"; }
@@ -133,8 +134,9 @@ public class RemoteHttpTest {
 
     @Test public void iconViaQueryTokenAndUnpair() throws Exception {
         String token = pair();
-        Res icon = call("GET", "/api/icon?pkg=com.netflix.ninja&t=" + token, null, null);
+        Res icon = call("GET", "/api/icon?pkg=com.netflix.ninja&style=dunkel&t=" + token, null, null);
         assertEquals(200, icon.status);
+        assertEquals("dunkel", fake.lastStyle);
         assertEquals("image/png", icon.type);
         assertEquals(200, call("POST", "/api/unpair", "{}", token).status);
         assertEquals(401, call("GET", "/api/status", null, token).status);

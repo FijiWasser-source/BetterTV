@@ -35,4 +35,15 @@ public final class KlarAccess {
         String st = iconStyle(c);
         return IconStyle.ORIGINAL.equals(st) || d == null ? d : new RoundedDrawable(d, 0, st);
     }
+
+    public static boolean validStyle(String style) {
+        if (style == null) return false;
+        for (String s : IconStyle.ALL) if (s.equals(style)) return true;
+        return false;
+    }
+
+    /** Bild in einem bestimmten Symbol-Stil (ohne Rundung). */
+    public static android.graphics.drawable.Drawable styled(android.graphics.drawable.Drawable d, String style) {
+        return IconStyle.ORIGINAL.equals(style) || d == null ? d : new RoundedDrawable(d, 0, style);
+    }
 }

@@ -80,14 +80,15 @@ final class AndroidBackend implements RemoteHttp.Backend {
         }
     }
 
-    @Override public synchronized byte[] icon(String pkg) {
+    @Override public synchronized byte[] icon(String pkg, String style) {
         if (pkg == null) return null;
-        String cacheKey = pkg + "|" + KlarAccess.iconStyle(context);
+        String st = KlarAccess.validStyle(style) ? style : KlarAccess.iconStyle(context);
+        String cacheKey = pkg + "|" + st;
         if (iconCache.containsKey(cacheKey)) return iconCache.get(cacheKey);
         byte[] png = null;
         for (AppEntry e : KlarAccess.apps(context)) {
             if (!pkg.equals(e.packageName())) continue;
-            Drawable d = KlarAccess.styled(context, e.hasBanner() ? e.bannerDrawable() : e.iconDrawable());
+            Drawable d = KlarAccess.styled(e.hasBanner() ? e.bannerDrawable() : e.iconDrawable(), st);
             if (d == null) break;
             int w = e.hasBanner() ? 320 : 192, h = e.hasBanner() ? 180 : 192;
             Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);

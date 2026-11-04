@@ -33,7 +33,7 @@ public final class RemoteHttp {
     public interface Backend {
         String tvName();
         String appsJson();               // {"apps":[{"pkg":..,"label":..,"dock":true}]}
-        byte[] icon(String pkg);         // PNG oder null
+        byte[] icon(String pkg, String style); // PNG oder null; style null = wie am Fernseher
         byte[] wallpaper();              // JPEG oder null
         boolean launch(String pkg);
         /** @return "ok", "needs_psk" (Sony-Steuercode fehlt/falsch) oder "error" */
@@ -232,7 +232,7 @@ public final class RemoteHttp {
             case "GET /api/apps":
                 return json(200, backend.appsJson());
             case "GET /api/icon": {
-                byte[] png = backend.icon(r.query.get("pkg"));
+                byte[] png = backend.icon(r.query.get("pkg"), r.query.get("style"));
                 if (png == null) return text(404, "Not Found");
                 Response res = new Response(200, "image/png", png);
                 res.cache = "private, max-age=86400";
