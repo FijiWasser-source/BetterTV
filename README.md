@@ -45,10 +45,12 @@ Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps. Hinter Pi
 näher, wenn Pixel stolpert – und erwischt ihn dann meistens: Pixel **kreischt**, **blinkt rot** und
 macht einen Schrei-Mund. Im Normalzustand **schaut Pixel immer wieder über die Schulter**, erschrickt
 (großer Blick, „!“, kleiner Hüpfer, manchmal „Es verfolgt mich!“) und sprintet kurz. Das Auto brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
-Was hinter Pixel wegfällt (Bahnsteine und Hindernisse), **landet als kleiner Haufen auf der ersten
-App**. Dort steht **Schluck** (eigene Figur, lange Arme und Beine) und arbeitet den Haufen ab: einsaugen
-oder abbeißen („Mampf!“, Krümel, Knuspern). Je höher das Level, desto mehr kommt an und desto schneller
-arbeitet er; bei vollem Haufen schwitzt er („ZU VIELE!“). Nachts schläft er.
+Was hinter Pixel von der Bahn bröckelt (Bahnsteine und Hindernisse), **fällt senkrecht herunter** auf
+die Höhe der Icons – auf die zweite App bzw. eine **kleine Pixel-Brücke** zwischen erster und zweiter App –
+und wird dort **im Tempo der Straße** nach links geschoben. Auf der ersten App steht **Schluck** (eigene Figur,
+lange Arme und Beine) mit einem **Staubsauger** und saugt die Teile ein; ab und zu isst er eins („Mampf!“).
+Je höher das Level, desto mehr kommt an und desto schneller saugt er; staut es sich, schwitzt er („ZU VIELE!“).
+Nachts schläft er.
 **App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).

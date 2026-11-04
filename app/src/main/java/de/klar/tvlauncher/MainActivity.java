@@ -123,8 +123,8 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             @Override public void onTalk(String text) { if (!text.startsWith("IIII")) sound.talk(text); }
             @Override public void onScream() { sound.scream(); }
             @Override public void onStartle() { sound.startle(); }
-            @Override public void onCrumble(float x, float y, float size, int color) { helper.addPiece(0); }
-            @Override public void onLeftBehind(int type) { helper.addPiece(type + 1); }
+            @Override public void onCrumble(float x, float y, float size, int color) { helper.addPiece(0, x, y); }
+            @Override public void onLeftBehind(int type, float x, float y) { helper.addPiece(type + 1, x, y); }
         });
         continueButton = findViewById(R.id.continue_button);
         continueLabel = findViewById(R.id.continue_label);

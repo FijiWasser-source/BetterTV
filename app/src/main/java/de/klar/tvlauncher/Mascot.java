@@ -48,8 +48,8 @@ public class Mascot extends View {
         default void onTalk(String text) {}
         default void onScream() {}
         default void onStartle() {}
-        /** Ein Hindernis (0 Stein, 1 Kiste, 2 Block) ist hinten aus dem Bild. */
-        default void onLeftBehind(int type) {}
+        /** Ein Hindernis (0 Stein, 1 Kiste, 2 Block) fällt hinten von der Bahn (Bildschirmkoordinaten). */
+        default void onLeftBehind(int type, float screenX, float screenY) {}
         /** Ein Stein bröckelt ab (Bildschirmkoordinaten, Größe in px). */
         default void onCrumble(float screenX, float screenY, float size, int color) {}
     }
@@ -178,6 +178,11 @@ public class Mascot extends View {
 
     public int level() { return level; }
 
+    private float currentSpeed = SPEED;
+
+    /** Tempo der Straße in Pixel pro Sekunde (für das Förderband zu Schluck). */
+    public float roadSpeedPx() { return currentSpeed * cell; }
+
     private long lastCrumbled = Long.MIN_VALUE;
     private final int[] screen = new int[2];
 
@@ -288,6 +293,7 @@ public class Mascot extends View {
 
         float speed = SPEED * Math.min(1.5f, 1 + 0.07f * (level - 1));
         if (stumble > 0) speed *= 0.3f;
+        currentSpeed = speed;
         stumble = Math.max(0, stumble - dt);
         hitTimer = Math.max(0, hitTimer - dt);
         sprint = Math.max(0, sprint - dt);
@@ -335,7 +341,11 @@ public class Mascot extends View {
             Thing th = it.next();
             th.x -= dx;
             if (th.x + th.w() < 0 || th.gone) {
-                if (!th.gone && th.type <= 2 && events != null && !simulating) events.onLeftBehind(th.type);
+                if (!th.gone && th.type <= 2 && events != null && !simulating) {
+                    getLocationOnScreen(screen);
+                    float groundPx = getHeight() - GROUND_FROM_BOTTOM * cell;
+                    events.onLeftBehind(th.type, screen[0] + cell * 1.5f, screen[1] + groundPx - th.h() * cell);
+                }
                 it.remove();
             }
         }
