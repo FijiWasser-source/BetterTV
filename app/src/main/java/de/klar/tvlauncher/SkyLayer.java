@@ -36,7 +36,18 @@ public class SkyLayer extends View {
     };
     private static final String[] BALLOON = {
             "..OOBB..", ".OOBBOO.", "OOBBOOBB", "OOBBOOBB", ".OBBOOB.", "..BBOO..", "...WW...", "...WW...", "..KKKK..", "..KKKK.."};
-    private static final String[] MOON = {"..XXX.", ".XXX..", "XXX...", "XXX...", "XXX...", ".XXX..", "..XXX."};
+    // Vollmond 9×9: X = Mond, C = Krater (etwas dunkler)
+    private static final String[] MOON = {
+            "...XXX...",
+            ".XXXXXXX.",
+            ".XXCCXXX.",
+            "XXXCCXXXX",
+            "XXXXXXCXX",
+            "XCXXXXXXX",
+            ".XXXXCCX.",
+            ".XXXXXXX.",
+            "...XXX...",
+    };
     private static final String[] SUN = {"..XXX..", ".XXXXX.", "XXXXXXX", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX.."};
 
     static final class Sprite {
@@ -162,12 +173,20 @@ public class SkyLayer extends View {
         if (evening()) {
             // heller Mond mit sanftem Schein
             float mx = w * 0.5f, my = h * 0.07f, ms = px * 1.3f;
-            float cx = mx + 3 * ms, cy = my + 3.5f * ms, r = 10 * ms;
-            glow.setShader(new android.graphics.RadialGradient(cx, cy, r, 0x40DCE6FF, 0x00DCE6FF,
+            float cx = mx + 4.5f * ms, cy = my + 4.5f * ms, r = 13 * ms;   // Mitte des Vollmonds
+            glow.setShader(new android.graphics.RadialGradient(cx, cy, r,
+                    new int[]{0x55DCE6FF, 0x22DCE6FF, 0x00DCE6FF}, new float[]{0f, 0.45f, 1f},
                     android.graphics.Shader.TileMode.CLAMP));
             c.drawCircle(cx, cy, r, glow);
-            paint.setColor(0xF2EEF3FF);
-            draw(c, MOON, mx, my, ms);
+            for (int row = 0; row < MOON.length; row++) {
+                for (int k = 0; k < MOON[row].length(); k++) {
+                    char ch = MOON[row].charAt(k);
+                    if (ch == '.') continue;
+                    paint.setColor(ch == 'C' ? 0xFFC9D2E6 : 0xFFF2F5FF);
+                    rect.set(mx + k * ms, my + row * ms, mx + (k + 1) * ms + 0.5f, my + (row + 1) * ms + 0.5f);
+                    c.drawRect(rect, paint);
+                }
+            }
         }
         else { paint.setColor(0x33FFD27A); draw(c, SUN, w * 0.5f, h * 0.07f, px * 1.3f); }
 
