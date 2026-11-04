@@ -3,6 +3,7 @@ package de.klar.tvlauncher;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,7 +31,7 @@ final class AppOrder {
             if (!hidden.contains(key) && !result.contains(key)) rest.add(key);
         }
         Collator collator = Collator.getInstance(Locale.GERMAN);
-        rest.sort((a, b) -> collator.compare(labels.get(a), labels.get(b)));
+        Collections.sort(rest, (a, b) -> collator.compare(labels.get(a), labels.get(b)));
         result.addAll(rest);
         return result;
     }

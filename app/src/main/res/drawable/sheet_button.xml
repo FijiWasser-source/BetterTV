@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tvOS-Muster: fokussierte Schaltfläche wird weiß mit schwarzer Schrift -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape><solid android:color="@color/focus" /><corners android:radius="14dp" /></shape>
+    </item>
+    <item>
+        <shape><solid android:color="@color/fill_soft" /><corners android:radius="14dp" /></shape>
+    </item>
+</selector>

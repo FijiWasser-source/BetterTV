@@ -2,6 +2,7 @@ package de.klar.tvlauncher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +33,7 @@ final class Prefs {
     }
 
     void setPinned(List<String> keys) {
-        sp.edit().putString(PINNED, String.join(SEP, keys)).apply();
+        sp.edit().putString(PINNED, TextUtils.join(SEP, keys)).apply();
     }
 
     Set<String> hidden() {
@@ -41,6 +42,13 @@ final class Prefs {
 
     void setHidden(Set<String> keys) {
         sp.edit().putStringSet(HIDDEN, new HashSet<>(keys)).apply();
+    }
+
+    /** true nur beim allerersten Aufruf. */
+    boolean firstRun() {
+        if (sp.getBoolean("seen_hint", false)) return false;
+        sp.edit().putBoolean("seen_hint", true).apply();
+        return true;
     }
 
     String city() { return sp.getString(CITY, ""); }

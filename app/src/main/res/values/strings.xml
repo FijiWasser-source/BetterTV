@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Klar</string>
-    <string name="section_apps">Apps</string>
-    <string name="hint">OK lange drücken oder Menü-Taste: anheften · ausblenden</string>
+    <string name="hint">Tipp: OK gedrückt halten für Optionen (anheften, ausblenden)</string>
     <string name="settings">Einstellungen</string>
     <string name="weather_loading">Wetter wird geladen …</string>
-    <string name="weather_off">Kein Ort gesetzt</string>
+    <string name="weather_off">Wetter: Ort in den Einstellungen wählen</string>
     <string name="weather_error">Wetter nicht verfügbar</string>
 </resources>

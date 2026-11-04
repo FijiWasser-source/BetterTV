@@ -1,7 +1,7 @@
 package de.klar.tvlauncher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,8 +10,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.text.InputType;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,7 +21,6 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +47,9 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private TextView weatherTemp;
     private TextView weatherText;
     private String focusKey;
+    private View ambient;
+    private int ambientColor;
+    private ObjectAnimator ambientAnim;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +58,16 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         prefs = new Prefs(this);
         weatherTemp = findViewById(R.id.weather_temp);
         weatherText = findViewById(R.id.weather_text);
+        ambient = findViewById(R.id.ambient);
+        ambientColor = color(R.color.bg_raised);
 
         grid = findViewById(R.id.grid);
         grid.setLayoutManager(new GridLayoutManager(this, COLUMNS));
         grid.setItemAnimator(null);
         adapter = new TileAdapter(this);
         grid.setAdapter(adapter);
+
+        if (prefs.firstRun()) Toast.makeText(this, R.string.hint, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -126,23 +134,29 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     public void onMenu(AppEntry entry) {
         if (entry.isSettings()) { showSettings(); return; }
         focusKey = entry.key;
-        List<String> labels = new ArrayList<>();
-        List<Runnable> actions = new ArrayList<>();
-
+        Sheet sheet = new Sheet(this, entry.label);
         if (entry.pinned) {
-            labels.add("Lösen"); actions.add(() -> setPinned(entry.key, false));
-            labels.add("Nach vorne"); actions.add(() -> movePin(entry.key, -1));
-            labels.add("Nach hinten"); actions.add(() -> movePin(entry.key, 1));
+            sheet.button("Lösen", () -> setPinned(entry.key, false))
+                 .button("Nach vorne", () -> movePin(entry.key, -1))
+                 .button("Nach hinten", () -> movePin(entry.key, 1));
         } else {
-            labels.add("An den Anfang heften"); actions.add(() -> setPinned(entry.key, true));
+            sheet.button("Oben anheften", () -> setPinned(entry.key, true));
         }
-        labels.add("Ausblenden"); actions.add(() -> hide(entry.key));
-        labels.add("App-Info"); actions.add(() -> openAppInfo(entry.packageName));
+        sheet.button("Ausblenden", () -> hide(entry.key))
+             .button("App-Info", () -> openAppInfo(entry.packageName))
+             .button("Abbrechen", null)
+             .show();
+    }
 
-        new AlertDialog.Builder(this, R.style.Theme_Klar_Dialog)
-                .setTitle(entry.label)
-                .setItems(labels.toArray(new String[0]), (d, which) -> actions.get(which).run())
-                .show();
+    @Override
+    public void onFocus(AppEntry entry, int color) {
+        int target = Tint.darken(color, 0.45f);
+        if (target == ambientColor) return;
+        if (ambientAnim != null) ambientAnim.cancel();
+        ambientAnim = ObjectAnimator.ofArgb(ambient, "backgroundColor", ambientColor, target);
+        ambientAnim.setDuration(600);
+        ambientAnim.start();
+        ambientColor = target;
     }
 
     private void setPinned(String key, boolean pin) {
@@ -169,36 +183,24 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     }
 
     private void openAppInfo(String pkg) {
-        Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg));
-        tryStart(i);
+        tryStart(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg)));
     }
 
     // --- Einstellungen ------------------------------------------------------
 
     private void showSettings() {
-        Set<String> hidden = prefs.hidden();
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
-        String[] items = {
-                "Wetter-Ort: " + city,
-                "Ausgeblendete Apps (" + hidden.size() + ")",
-                "Android-Einstellungen öffnen",
-                "Standard-Startbildschirm wählen",
-        };
-        new AlertDialog.Builder(this, R.style.Theme_Klar_Dialog)
-                .setTitle(R.string.settings)
-                .setItems(items, (d, which) -> {
-                    switch (which) {
-                        case 0: askCity(); break;
-                        case 1: showHidden(); break;
-                        case 2: tryStart(new Intent(Settings.ACTION_SETTINGS)); break;
-                        case 3:
-                            if (!tryStart(new Intent(Settings.ACTION_HOME_SETTINGS))) {
-                                Toast.makeText(this, "Auf diesem Gerät nur per ADB möglich – siehe Anleitung",
-                                        Toast.LENGTH_LONG).show();
-                            }
-                            break;
+        new Sheet(this, getString(R.string.settings))
+                .button("Wetter-Ort: " + city, this::askCity)
+                .button("Ausgeblendete Apps (" + prefs.hidden().size() + ")", this::showHidden)
+                .button("Android-Einstellungen", () -> tryStart(new Intent(Settings.ACTION_SETTINGS)))
+                .button("Standard-Startbildschirm", () -> {
+                    if (!tryStart(new Intent(Settings.ACTION_HOME_SETTINGS))) {
+                        Toast.makeText(this, "Auf diesem Gerät per Einrichtungs-Skript (siehe Anleitung)",
+                                Toast.LENGTH_LONG).show();
                     }
                 })
+                .button("Fertig", null)
                 .show();
     }
 
@@ -209,36 +211,42 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             return;
         }
         Map<String, String> all = AppLoader.allLabels(this);
-        List<String> keys = new ArrayList<>(hidden);
-        String[] names = new String[keys.size()];
-        for (int i = 0; i < keys.size(); i++) {
-            String label = all.get(keys.get(i));
-            names[i] = label != null ? label : keys.get(i) + " (deinstalliert)";
+        Sheet sheet = new Sheet(this, "Wieder anzeigen");
+        for (String key : hidden) {
+            String label = all.get(key);
+            sheet.button(label != null ? label : key + " (deinstalliert)", () -> {
+                Set<String> h = prefs.hidden();
+                h.remove(key);
+                prefs.setHidden(h);
+                reloadApps();
+            });
         }
-        new AlertDialog.Builder(this, R.style.Theme_Klar_Dialog)
-                .setTitle("Wieder anzeigen")
-                .setItems(names, (d, which) -> {
-                    Set<String> h = prefs.hidden();
-                    h.remove(keys.get(which));
-                    prefs.setHidden(h);
-                    reloadApps();
-                })
-                .show();
+        sheet.button("Abbrechen", null).show();
     }
 
     private void askCity() {
         EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        input.setSingleLine(true);
         input.setHint("z. B. Hamburg");
         input.setText(prefs.city());
         input.setSelectAllOnFocus(true);
-        new AlertDialog.Builder(this, R.style.Theme_Klar_Dialog)
-                .setTitle("Ort für das Wetter")
-                .setView(input)
-                .setPositiveButton("Speichern", (d, w) -> saveCity(input.getText().toString()))
-                .setNeutralButton("Kein Wetter", (d, w) -> { prefs.clearLocation(); refreshWeather(); })
-                .setNegativeButton("Abbrechen", null)
+        input.setTextColor(color(R.color.text));
+        input.setHintTextColor(color(R.color.text_faint));
+        input.setTextSize(18);
+        input.setGravity(Gravity.CENTER);
+        input.setBackgroundResource(R.drawable.sheet_input);
+        int pad = Math.round(14 * getResources().getDisplayMetrics().density);
+        input.setPadding(pad, pad, pad, pad);
+        new Sheet(this, "Ort für das Wetter")
+                .message("Nur dieser Ort wird an Open-Meteo gesendet.")
+                .extra(input)
+                .button("Speichern", () -> saveCity(input.getText().toString()))
+                .button("Kein Wetter anzeigen", () -> { prefs.clearLocation(); refreshWeather(); })
+                .button("Abbrechen", null)
                 .show();
+        input.requestFocus();
     }
 
     private void saveCity(String query) {
@@ -250,11 +258,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 main.post(() -> {
                     if (place == null) {
                         Toast.makeText(this, "Ort nicht gefunden", Toast.LENGTH_SHORT).show();
-                        refreshWeather();
                     } else {
                         prefs.setLocation(place.name, place.lat, place.lon);
-                        refreshWeather();
                     }
+                    refreshWeather();
                 });
             } catch (Exception e) {
                 main.post(() -> {
@@ -298,5 +305,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         } catch (ActivityNotFoundException | SecurityException e) {
             return false;
         }
+    }
+
+    @SuppressWarnings("deprecation") // Context#getColor gibt es erst ab Android 6
+    private int color(int id) {
+        return getResources().getColor(id);
     }
 }

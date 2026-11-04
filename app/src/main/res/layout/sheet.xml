@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="440dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/sheet_bg"
+    android:elevation="24dp"
+    android:orientation="vertical"
+    android:padding="28dp">
+
+    <TextView
+        android:id="@+id/sheet_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:textColor="@color/text"
+        android:textSize="22sp" />
+
+    <TextView
+        android:id="@+id/sheet_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="@color/text_muted"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/sheet_extra"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/sheet_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="vertical" />
+</LinearLayout>

@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#0E1114</color>
-    <color name="surface">#1A1F24</color>
-    <color name="surface_focus">#2A323A</color>
-    <color name="text">#F1F3F5</color>
-    <color name="text_muted">#8C97A1</color>
-    <color name="accent">#7FD1B9</color>
+    <!-- Angelehnt an Apples dunkle Systemfarben (tvOS / iOS Dark Mode) -->
+    <color name="bg">#000000</color>
+    <color name="bg_raised">#1C1C1E</color>
+    <color name="fill">#2C2C2E</color>
+    <color name="fill_soft">#1AFFFFFF</color>
+    <color name="text">#FFFFFF</color>
+    <color name="text_muted">#99EBEBF5</color>
+    <color name="text_faint">#4DEBEBF5</color>
+    <color name="focus">#FFFFFF</color>
+    <color name="on_focus">#000000</color>
 </resources>
