@@ -7,15 +7,17 @@ package de.klar.tvlauncher;
 final class IconStyle {
     private IconStyle() {}
 
-    static final String ORIGINAL = "original", DARK = "dunkel", ORANGE = "orange", BLUE = "blau", GLASS = "glas";
-    static final String[] ALL = {ORIGINAL, DARK, ORANGE, BLUE, GLASS};
+    static final String ORIGINAL = "original", DARK = "dunkel", ORANGE = "orange", BLUE = "blau",
+            GLASS = "glas", GLASS_ORANGE = "glas_orange";
+    static final String[] ALL = {ORIGINAL, DARK, ORANGE, BLUE, GLASS, GLASS_ORANGE};
 
     static String label(String style) {
         switch (style) {
             case DARK: return "Dunkel";
             case ORANGE: return "Orange getönt";
             case BLUE: return "Blau getönt";
-            case GLASS: return "Glas";
+            case GLASS: return "Glas Blau";
+            case GLASS_ORANGE: return "Glas Orange";
             default: return "Original";
         }
     }
@@ -65,7 +67,8 @@ final class IconStyle {
             if ((px[i] >>> 24) > 128) { lo = Math.min(lo, lum[i]); hi = Math.max(hi, lum[i]); }
         }
         float range = Math.max(0.15f, hi - lo);
-        if (GLASS.equals(style)) { glass(px, lum, lo, range, width, height); return; }
+        if (GLASS.equals(style)) { glass(px, lum, lo, range, width, height, false); return; }
+        if (GLASS_ORANGE.equals(style)) { glass(px, lum, lo, range, width, height, true); return; }
         // 3. Auf Verlauf dunkler Grund -> Tönung abbilden (Kontrast gestreckt)
         int f = fg(style);
         for (int i = 0; i < px.length; i++) {
@@ -81,26 +84,41 @@ final class IconStyle {
     private static int mix(int a, int b, float t) { return Math.round(a + (b - a) * t); }
 
     /**
-     * Glas: getöntes, dunkel durchscheinendes Glas (Kachelfarbe schimmert durch), das Logo
-     * hell und fast deckend darauf, oben ein Lichtreflex und eine feine helle Kante.
+     * Glas: ohne Hintergrund – nur das Logo wird zu Glas und sitzt direkt auf der Kachel.
+     * Blau: dunkel getöntes, durchscheinendes Glas (die Kachelfarbe schimmert durch).
+     * Orange: oranges Glas. Beide mit Lichtreflex oben und heller Glanzkante am Logo.
      */
-    private static void glass(int[] px, float[] lum, float lo, float range, int width, int height) {
-        float highlightRows = height * 0.45f;
+    private static void glass(int[] px, float[] lum, float lo, float range, int width, int height, boolean orange) {
+        float[] t = new float[px.length];
+        for (int i = 0; i < px.length; i++) {
+            float v = Math.max(0, Math.min(1, (lum[i] - lo) / range));
+            // Hintergrund konsequent wegschneiden (auch Farbverläufe), Rest neu spreizen
+            v = Math.max(0, (v - 0.3f) / 0.7f);
+            t[i] = v * v * (3 - 2 * v);
+        }
+        int base = orange ? 0xF57A12 : 0x0B1430;      // Glasfarbe
+        int light = orange ? 0xFFD2A3 : 0xB9CEFF;     // Farbe des Lichtreflexes
+        float maxAlpha = orange ? 1f : 0.82f;
+        float highlightRows = height * 0.5f;
         for (int y = 0; y < height; y++) {
-            float sheen = y < highlightRows ? 0.22f * (1 - y / highlightRows) : 0;
+            float sheen = y < highlightRows ? 0.38f * (1 - y / highlightRows) : 0;
             for (int x = 0; x < width; x++) {
                 int i = y * width + x;
-                float t = Math.max(0, Math.min(1, (lum[i] - lo) / range));
-                t = t * t * (3 - 2 * t);
-                // Farbe: Grund fast schwarz (mit Reflex aufgehellt) -> Logo weiß
-                float g = 0.06f + sheen;
-                float v = g + (1 - g) * t;
-                float a = 0.42f + (0.95f - 0.42f) * t;                  // Grund ~42 %, Logo ~95 %
-                boolean edge = y == 0 || x == 0 || x == width - 1 || y == height - 1;
-                if (edge) { v = 1f; a = y == 0 ? 0.6f : 0.35f; }         // helle Kante, oben kräftiger
-                int c = Math.round(v * 255);
-                int alpha = Math.round(a * (px[i] >>> 24));
-                px[i] = (alpha << 24) | (c << 16) | (c << 8) | c;
+                float m = t[i];                                   // 0 = Hintergrund (fällt weg), 1 = Logo
+                if (m < 0.02f) { px[i] &= 0x00FFFFFF; continue; } // Hintergrund ganz durchsichtig
+                // Glanzkante: Logopixel, über dem kein Logo mehr ist
+                boolean topEdge = m > 0.5f && (y == 0 || t[i - width] < 0.5f);
+                int r, g, b; float a;
+                if (topEdge) {
+                    r = g = b = 255; a = 0.75f;
+                } else {
+                    r = mix((base >> 16) & 0xFF, (light >> 16) & 0xFF, sheen);
+                    g = mix((base >> 8) & 0xFF, (light >> 8) & 0xFF, sheen);
+                    b = mix(base & 0xFF, light & 0xFF, sheen);
+                    a = maxAlpha * m + sheen * 0.15f * m;
+                }
+                int alpha = Math.round(Math.min(1f, a) * (px[i] >>> 24));
+                px[i] = (alpha << 24) | (r << 16) | (g << 8) | b;
             }
         }
     }

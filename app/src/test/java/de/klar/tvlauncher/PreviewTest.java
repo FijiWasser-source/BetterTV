@@ -222,6 +222,7 @@ public class PreviewTest {
     @Test public void abendDunkel() { snapshotAbend(IconStyle.DARK, "abend_dunkel"); }
     @Test public void abendOrange() { snapshotAbend(IconStyle.ORANGE, "abend_orange"); }
     @Test public void abendGlas() { snapshotAbend(IconStyle.GLASS, "abend_glas"); }
+    @Test public void abendGlasOrange() { snapshotAbend(IconStyle.GLASS_ORANGE, "abend_glas_orange"); }
 
     private void snapshotAbend(String style, String name) {
         View root = paparazzi.inflate(R.layout.activity_main_abend);

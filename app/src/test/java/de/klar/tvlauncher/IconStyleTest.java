@@ -49,21 +49,26 @@ public class IconStyleTest {
         assertEquals(0xFF123456, px[0]);
         assertEquals(IconStyle.DARK, IconStyle.next(IconStyle.ORIGINAL));
         assertEquals(IconStyle.GLASS, IconStyle.next(IconStyle.BLUE));
-        assertEquals(IconStyle.ORIGINAL, IconStyle.next(IconStyle.GLASS));
+        assertEquals(IconStyle.GLASS_ORANGE, IconStyle.next(IconStyle.GLASS));
+        assertEquals(IconStyle.ORIGINAL, IconStyle.next(IconStyle.GLASS_ORANGE));
     }
 
-    /** Glas: Logo fast deckend weiß, Grund durchscheinend, Rand heller als der Grund. */
-    @Test public void glassMakesLogoWhiteAndBackgroundTranslucent() {
-        // 10×10: Rand weiß (Hintergrund), Logo nur ein 4×4-Feld in der Mitte
-        int[] px = new int[100];
-        for (int y = 0; y < 10; y++) for (int x = 0; x < 10; x++)
-            px[y * 10 + x] = (x >= 3 && x <= 6 && y >= 3 && y <= 6) ? 0xFFE50914 : 0xFFFFFFFF;
-        IconStyle.apply(px, 10, IconStyle.GLASS);
-        int logo = px[55], bottomGround = px[8 * 10 + 9];
-        assertEquals(0xFFFFFF, logo & 0xFFFFFF);
-        assertTrue("Logo fast deckend", (logo >>> 24) > 200);
-        assertTrue("Grund durchscheinend", (px[22] >>> 24) < 140 && (px[22] & 0xFF) < 120);
-        assertTrue("Rand durchscheinend", (bottomGround >>> 24) < 120);
-        assertTrue("obere Kante heller als untere", (px[5] >>> 24) > (px[95] >>> 24));
+    /** Glas: Hintergrund fällt weg, nur das Logo bleibt (als Glas), oben mit heller Glanzkante. */
+    @Test public void glassRemovesBackgroundAndKeepsGlassyLogo() {
+        for (String style : new String[]{IconStyle.GLASS, IconStyle.GLASS_ORANGE}) {
+            int[] px = new int[100];
+            for (int y = 0; y < 10; y++) for (int x = 0; x < 10; x++)
+                px[y * 10 + x] = (x >= 3 && x <= 6 && y >= 3 && y <= 6) ? 0xFFE50914 : 0xFFFFFFFF;
+            IconStyle.apply(px, 10, style);
+            assertEquals(style + ": Hintergrund durchsichtig", 0, px[0] >>> 24);
+            assertEquals(0, px[99] >>> 24);
+            assertTrue(style + ": Logo sichtbar", (px[5 * 10 + 4] >>> 24) > 100);
+            assertEquals(style + ": Glanzkante weiß", 0xFFFFFF, px[3 * 10 + 4] & 0xFFFFFF);
+        }
+        int[] o = new int[100];
+        for (int i = 0; i < 100; i++) o[i] = (i % 10 >= 3 && i % 10 <= 6 && i / 10 >= 3 && i / 10 <= 6) ? 0xFFFFFFFF : 0xFF000000;
+        IconStyle.apply(o, 10, IconStyle.GLASS_ORANGE);
+        int c = o[6 * 10 + 5];
+        assertTrue("orange Glas: rot > blau", ((c >> 16) & 0xFF) > (c & 0xFF) + 80);
     }
 }

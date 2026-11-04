@@ -34,7 +34,7 @@ In der Mitte läuft **Pixel**, ein kleines Maskottchen (eigene Figur), in einem 
 rennt über eine Pixel-Laufbahn, springt automatisch über Steine, Kisten und Blöcke, sammelt
 Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. **Taste 0** lässt ihn springen.
 **App-Symbole** lassen sich einheitlich darstellen (*Einstellungen → App-Symbole*): Original,
-Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas (getöntes, durchscheinendes Glas mit Reflex) – nur innerhalb von Klar und
+Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (ohne Hintergrund: nur das Logo als getöntes Glas mit Reflex und Glanzkante) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
 Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
 
