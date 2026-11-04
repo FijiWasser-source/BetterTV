@@ -118,7 +118,7 @@ final class AndroidBackend implements RemoteHttp.Backend {
     @Override public boolean launch(String pkg) {
         for (AppEntry e : KlarAccess.apps(context)) {
             if (pkg.equals(e.packageName())) {
-                try { context.startActivity(e.launch()); return true; } catch (Exception ex) { return false; }
+                try { context.startActivity(e.launch()); KlarAccess.noteLaunched(context, pkg); return true; } catch (Exception ex) { return false; }
             }
         }
         return false;

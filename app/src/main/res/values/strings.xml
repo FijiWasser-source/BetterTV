@@ -9,4 +9,5 @@
     <string name="weather_loading">Wetter wird geladen …</string>
     <string name="weather_off">Wetter: Ort in den Einstellungen wählen</string>
     <string name="weather_error">Wetter nicht verfügbar</string>
+    <string name="continue_with">WEITER MIT</string>
 </resources>

@@ -25,6 +25,17 @@ Gestaltet nach Apples Liquid-Glass-Richtlinien im Farbschema **Midnight** (tiefe
 Klar bildet es nach; die Unschärfe wird einmalig berechnet, damit es auch auf älteren
 Fernsehern flüssig bleibt.
 
+## Design „Abend“ (Standard ab 3.0)
+
+Begrüßung je nach Tageszeit („Guten Abend. Was läuft heute?“), Uhr, Datum und Wetter in
+Pixel-Schrift, nummerierte Kacheln mit orangem Leuchten bei Fokus, „Weiter mit …“ für die
+zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die jeweilige Kachel.
+Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
+
+![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)
+
+Schrift: Nunito ExtraBold, SIL Open Font License 1.1 (`app/src/main/assets/fonts/Nunito-OFL.txt`).
+
 ## Bedienung
 
 | Wo | Taste | Funktion |

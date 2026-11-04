@@ -17,6 +17,7 @@ final class AppMenu {
     static void open(Activity a, AppEntry e) {
         try {
             a.startActivity(e.launchIntent);
+            new Prefs(a).setLastLaunched(e.packageName);
         } catch (ActivityNotFoundException | SecurityException ex) {
             Toast.makeText(a, "App lässt sich nicht starten", Toast.LENGTH_SHORT).show();
         }

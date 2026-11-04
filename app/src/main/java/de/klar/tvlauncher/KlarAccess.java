@@ -21,4 +21,9 @@ public final class KlarAccess {
         int w = Math.max(m.widthPixels, m.heightPixels), h = Math.min(m.widthPixels, m.heightPixels);
         return Wallpaper.load(c, w, h).full;
     }
+
+    /** Für "Weiter mit …": merkt sich die zuletzt gestartete App. */
+    public static void noteLaunched(Context c, String pkg) {
+        new Prefs(c).setLastLaunched(pkg);
+    }
 }

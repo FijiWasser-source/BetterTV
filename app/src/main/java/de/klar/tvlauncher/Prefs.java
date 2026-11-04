@@ -59,6 +59,15 @@ final class Prefs {
         sp.edit().putStringSet("known_defaults", new HashSet<>(keys)).apply();
     }
 
+    /** "abend" (Begrüßung, Pixel-Uhr, Kacheln) oder "glas" (Hintergrundbild, Glas-Dock). */
+    String design() { return sp.getString("design", "abend"); }
+
+    void setDesign(String d) { sp.edit().putString("design", d).apply(); }
+
+    String lastLaunched() { return sp.getString("last_launched", ""); }
+
+    void setLastLaunched(String pkg) { sp.edit().putString("last_launched", pkg).apply(); }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }

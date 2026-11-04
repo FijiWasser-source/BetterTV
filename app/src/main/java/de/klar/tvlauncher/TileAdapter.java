@@ -31,6 +31,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private final int layoutRes;
     private final float focusScale;
     private final boolean tintIconTiles;
+    private final boolean abend;
     private final Map<String, Integer> colors = new HashMap<>();
     private final DecelerateInterpolator ease = new DecelerateInterpolator(2f);
     private List<AppEntry> items = new ArrayList<>();
@@ -46,6 +47,12 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
      *                      im Glas-Dock bleiben sie neutrale Füllungen)
      */
     TileAdapter(Listener listener, int layoutRes, float focusScale, boolean tintIconTiles) {
+        this(listener, layoutRes, focusScale, tintIconTiles, false);
+    }
+
+    /** @param abend Design "Abend": Nummern, Name immer sichtbar, oranges Leuchten bei Fokus */
+    TileAdapter(Listener listener, int layoutRes, float focusScale, boolean tintIconTiles, boolean abend) {
+        this.abend = abend;
         this.listener = listener;
         this.layoutRes = layoutRes;
         this.focusScale = focusScale;
@@ -85,6 +92,14 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         AppEntry e = items.get(position);
         int color = colorOf(e);
         h.card.setTag(e.key);
+        if (abend && !(h.card.getBackground() instanceof AbendTile)) {
+            h.card.setBackground(new AbendTile(density, 16));
+        }
+        if (h.number != null) {
+            // Nummer = Taste auf der Fernbedienung (nur echte Apps, 1–9)
+            boolean app = e.launchIntent != null;
+            h.number.setText(app && position < 9 ? String.valueOf(position + 1) : "");
+        }
         h.card.setContentDescription(e.label);
         if (h.label != null) h.label.setText(e.label);
         h.card.setClipToOutline(true);
@@ -128,6 +143,14 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     }
 
     private void applyFocus(Holder h, boolean focused, boolean animate) {
+        if (abend) {
+            AbendTile.focus(h.card, focused);
+            if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : 0xFFAEB8D9);
+            float s = focused ? focusScale : 1f;
+            if (animate) h.card.animate().scaleX(s).scaleY(s).setInterpolator(ease).setDuration(160).start();
+            else { h.card.setScaleX(s); h.card.setScaleY(s); }
+            return;
+        }
         float scale = focused ? focusScale : 1f;
         float lift = focused ? 18f * density : 0f;
         float alpha = focused ? 1f : 0f;
@@ -137,11 +160,11 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             if (h.label != null) {
                 h.label.animate().alpha(alpha).translationY(focused ? 4f * density : 0f).setDuration(180).start();
             }
-            h.sheen.animate().alpha(alpha).setDuration(180).start();
+            if (h.sheen != null) h.sheen.animate().alpha(alpha).setDuration(180).start();
         } else {
             h.card.setScaleX(scale); h.card.setScaleY(scale); h.card.setTranslationZ(lift);
             if (h.label != null) h.label.setAlpha(alpha);
-            h.sheen.setAlpha(alpha);
+            if (h.sheen != null) h.sheen.setAlpha(alpha);
         }
     }
 
@@ -155,6 +178,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         final TextView label;
         final View sheen;
         final View pin;
+        final TextView number;
 
         Holder(View v) {
             super(v);
@@ -164,6 +188,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             label = v.findViewById(R.id.label);
             sheen = v.findViewById(R.id.sheen);
             pin = v.findViewById(R.id.pin);
+            number = v.findViewById(R.id.number);
         }
     }
 }

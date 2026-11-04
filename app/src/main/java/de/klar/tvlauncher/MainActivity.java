@@ -52,28 +52,32 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private TextView weatherText;
     private String focusKey;
 
+    private boolean abend;
+    private TextView greeting;
+    private PixelText pixelClock, pixelDate, pixelWeather;
+    private View continueButton;
+    private TextView continueLabel;
+    private final Runnable clockTick = new Runnable() {
+        @Override public void run() {
+            updateClock();
+            main.postDelayed(this, 1000);
+        }
+    };
+
+    private static final String KEY_ALL = "klar:all";
+    private static final String KEY_SETTINGS = "klar:settings";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         prefs = new Prefs(this);
-        weatherTemp = findViewById(R.id.weather_temp);
-        weatherText = findViewById(R.id.weather_text);
-        dockLabel = findViewById(R.id.dock_label);
-        dockEmpty = findViewById(R.id.dock_empty);
-
-        View allApps = findViewById(R.id.all_apps_button);
-        View settings = findViewById(R.id.settings_button);
-        allApps.setOnClickListener(v -> startActivity(new Intent(this, AppsActivity.class)));
-        settings.setOnClickListener(v -> showSettings());
-        allApps.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.all_apps); });
-        settings.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.settings); });
-
+        abend = "abend".equals(prefs.design());
+        setContentView(abend ? R.layout.activity_main_abend : R.layout.activity_main);
         dockList = findViewById(R.id.dock_list);
         dockList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         dockList.setItemAnimator(null);
-        adapter = new TileAdapter(this, R.layout.item_dock, 1.15f, false);
-        dockList.setAdapter(adapter);
+
+        if (abend) setupAbend(); else setupGlass();
 
         View root = findViewById(R.id.root);
         root.post(this::applyWallpaper);
@@ -82,11 +86,74 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         de.klar.tvlauncher.remote.RemoteService.start(this);
     }
 
+    private void setupGlass() {
+        weatherTemp = findViewById(R.id.weather_temp);
+        weatherText = findViewById(R.id.weather_text);
+        dockLabel = findViewById(R.id.dock_label);
+        dockEmpty = findViewById(R.id.dock_empty);
+        View allApps = findViewById(R.id.all_apps_button);
+        View settings = findViewById(R.id.settings_button);
+        allApps.setOnClickListener(v -> startActivity(new Intent(this, AppsActivity.class)));
+        settings.setOnClickListener(v -> showSettings());
+        allApps.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.all_apps); });
+        settings.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.settings); });
+        adapter = new TileAdapter(this, R.layout.item_dock, 1.15f, false);
+        dockList.setAdapter(adapter);
+    }
+
+    private void setupAbend() {
+        greeting = findViewById(R.id.greeting);
+        greeting.setTypeface(Fonts.rounded(this));
+        pixelClock = findViewById(R.id.pixel_clock);
+        pixelDate = findViewById(R.id.pixel_date);
+        pixelWeather = findViewById(R.id.pixel_weather);
+        continueButton = findViewById(R.id.continue_button);
+        continueLabel = findViewById(R.id.continue_label);
+        continueLabel.setTypeface(Fonts.rounded(this));
+        float d = getResources().getDisplayMetrics().density;
+        continueButton.setBackground(new AbendTile(d, -1));
+        continueButton.setOnFocusChangeListener((v, f) -> AbendTile.focus(v, f));
+        continueButton.setOnClickListener(v -> {
+            for (AppEntry e : AppLoader.load(this, prefs)) {
+                if (e.packageName.equals(prefs.lastLaunched())) { AppMenu.open(this, e); return; }
+            }
+        });
+        adapter = new TileAdapter(this, R.layout.item_tile_abend, 1.06f, false, true);
+        dockList.setAdapter(adapter);
+    }
+
+    /** Begrüßung je nach Tageszeit, zweite Zeile mit orangem Schlusswort. */
+    static CharSequence greetingFor(int hour) {
+        String first = hour >= 5 && hour < 11 ? "Guten Morgen." : hour < 17 && hour >= 11 ? "Guten Tag."
+                : hour < 22 && hour >= 17 ? "Guten Abend." : "Gute Nacht.";
+        String second = hour >= 22 || hour < 5 ? "Noch eine Folge?" : "Was läuft heute?";
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(first + "\n" + second);
+        int lastWord = sb.toString().lastIndexOf(' ') + 1;
+        sb.setSpan(new android.text.style.ForegroundColorSpan(AbendTile.ORANGE), lastWord, sb.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(0xFFBFE4FF), 0, first.length(), 0);
+        return sb;
+    }
+
+    private void updateClock() {
+        if (!abend) return;
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        pixelClock.setText(String.format(java.util.Locale.GERMAN, "%02d:%02d",
+                now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE)));
+        pixelClock.tick();
+        pixelDate.setText(new java.text.SimpleDateFormat("EEEE, d. MMMM", java.util.Locale.GERMAN).format(now.getTime()));
+        greeting.setText(greetingFor(now.get(java.util.Calendar.HOUR_OF_DAY)));
+    }
+
     private void applyWallpaper() {
         View root = findViewById(R.id.root);
         if (root.getWidth() == 0) return;
+        ImageView wall = findViewById(R.id.wallpaper);
+        if (abend) {
+            wall.setImageBitmap(AbendBackground.render(root.getWidth(), root.getHeight()));
+            return;
+        }
         Wallpaper.Images img = Wallpaper.load(this, root.getWidth(), root.getHeight());
-        ((ImageView) findViewById(R.id.wallpaper)).setImageBitmap(img.full);
+        wall.setImageBitmap(img.full);
         ((GlassLayout) findViewById(R.id.dock)).setBackdrop(img.blurred,
                 (float) root.getWidth() / img.blurred.getWidth());
     }
@@ -95,15 +162,18 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     protected void onResume() {
         super.onResume();
         reloadDock();
-        findViewById(R.id.root).post(this::applyWallpaper); // falls ein neues Bild abgelegt wurde
+        if (!abend) findViewById(R.id.root).post(this::applyWallpaper); // falls ein neues Bild abgelegt wurde
         main.removeCallbacks(weatherTick);
         main.post(weatherTick);
+        main.removeCallbacks(clockTick);
+        if (abend) main.post(clockTick);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         main.removeCallbacks(weatherTick);
+        main.removeCallbacks(clockTick);
     }
 
     @Override
@@ -112,14 +182,27 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         io.shutdownNow();
     }
 
-    /** Als Startbildschirm darf "Zurück" die Oberfläche nicht schließen. */
+    /** Zurück bleibt auf der Startseite; Zifferntasten 1–9 starten die Apps im Dock. */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+        int code = event.getKeyCode();
+        if (code == KeyEvent.KEYCODE_BACK) {
             if (event.getAction() == KeyEvent.ACTION_UP) { focusKey = null; focusDock(0); }
             return true;
         }
+        if (code >= KeyEvent.KEYCODE_1 && code <= KeyEvent.KEYCODE_9) {
+            if (event.getAction() == KeyEvent.ACTION_UP) launchNumber(code - KeyEvent.KEYCODE_1);
+            return true;
+        }
         return super.dispatchKeyEvent(event);
+    }
+
+    private void launchNumber(int index) {
+        List<AppEntry> dock = AppLoader.dock(AppLoader.load(this, prefs));
+        if (index < dock.size()) {
+            focusKey = dock.get(index).key;
+            AppMenu.open(this, dock.get(index));
+        }
     }
 
     // --- Dock ---------------------------------------------------------------
@@ -127,13 +210,27 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private void reloadDock() {
         View focused = getCurrentFocus();
         if (focused != null && focused.getTag() instanceof String) focusKey = (String) focused.getTag();
-        List<AppEntry> dock = AppLoader.dock(AppLoader.load(this, prefs));
-        adapter.submit(dock);
-        dockEmpty.setVisibility(dock.isEmpty() ? View.VISIBLE : View.GONE);
-        dockList.setVisibility(dock.isEmpty() ? View.GONE : View.VISIBLE);
-        if (dock.isEmpty()) {
-            findViewById(R.id.all_apps_button).requestFocus();
-            return;
+        List<AppEntry> all = AppLoader.load(this, prefs);
+        List<AppEntry> dock = AppLoader.dock(all);
+        if (abend) {
+            // "Alle Apps" und "Einstellungen" als letzte Kacheln
+            dock.add(new AppEntry(KEY_ALL, getString(R.string.all_apps), "", null,
+                    getResources().getDrawable(R.drawable.ic_apps_color), null, false));
+            dock.add(new AppEntry(KEY_SETTINGS, getString(R.string.settings), "", null,
+                    getResources().getDrawable(R.drawable.ic_settings_large), null, false));
+            AppEntry last = null;
+            for (AppEntry e : all) if (e.packageName.equals(prefs.lastLaunched())) last = e;
+            continueButton.setVisibility(last == null ? View.GONE : View.VISIBLE);
+            if (last != null) continueLabel.setText(last.label);
+            adapter.submit(dock);
+        } else {
+            adapter.submit(dock);
+            dockEmpty.setVisibility(dock.isEmpty() ? View.VISIBLE : View.GONE);
+            dockList.setVisibility(dock.isEmpty() ? View.GONE : View.VISIBLE);
+            if (dock.isEmpty()) {
+                findViewById(R.id.all_apps_button).requestFocus();
+                return;
+            }
         }
         focusDock(focusKey == null ? 0 : Math.max(0, adapter.indexOf(focusKey)));
     }
@@ -149,18 +246,22 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
 
     @Override
     public void onFocus(AppEntry entry) {
-        dockLabel.setText(entry.label);
+        if (dockLabel != null) dockLabel.setText(entry.label);
+        if (abend) dockList.smoothScrollToPosition(Math.max(0, adapter.indexOf(entry.key)));
     }
 
     @Override
     public void onOpen(AppEntry entry) {
         focusKey = entry.key;
+        if (KEY_ALL.equals(entry.key)) { startActivity(new Intent(this, AppsActivity.class)); return; }
+        if (KEY_SETTINGS.equals(entry.key)) { showSettings(); return; }
         AppMenu.open(this, entry);
     }
 
     @Override
     public void onMenu(AppEntry entry) {
         focusKey = entry.key;
+        if (entry.launchIntent == null) { onOpen(entry); return; }
         AppMenu.show(this, prefs, entry, this::reloadDock);
     }
 
@@ -169,6 +270,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private void showSettings() {
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
         new Sheet(this, getString(R.string.settings))
+                .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)") + " – wechseln", () -> {
+                    prefs.setDesign(abend ? "glas" : "abend");
+                    recreate();
+                })
                 .button("Wetter-Ort: " + city, this::askCity)
                 .button("Handy-Fernbedienung", this::showRemoteInfo)
                 .button("Hintergrundbild", this::showWallpaperInfo)
@@ -258,7 +363,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
 
     private void saveCity(String query) {
         if (query.trim().isEmpty()) return;
-        weatherText.setText(R.string.weather_loading);
+        showWeather("", getString(R.string.weather_loading));
         io.execute(() -> {
             try {
                 Weather.Place place = Weather.geocode(query);
@@ -279,12 +384,24 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         });
     }
 
+    private boolean weatherShown;
+
+    private void showWeather(String temp, String text) {
+        weatherShown = !temp.isEmpty();
+        if (abend) {
+            // Pixel-Schrift: ohne Ort/Stadt, kurz und knapp
+            pixelWeather.setText(temp.isEmpty() ? "" : temp + " " + text.split(" · ")[0]);
+        } else {
+            weatherTemp.setText(temp);
+            weatherText.setText(text);
+        }
+    }
+
     // --- Wetter -------------------------------------------------------------
 
     private void refreshWeather() {
         if (!prefs.hasLocation()) {
-            weatherTemp.setText("");
-            weatherText.setText(R.string.weather_off);
+            showWeather("", getString(R.string.weather_off));
             return;
         }
         double lat = prefs.lat(), lon = prefs.lon();
@@ -293,13 +410,12 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             try {
                 Weather.Current c = Weather.current(lat, lon);
                 main.post(() -> {
-                    weatherTemp.setText(Weather.formatTemp(c.temperature));
                     String desc = Weather.describe(c.code);
-                    weatherText.setText(desc.isEmpty() ? city : desc + " · " + city);
+                    showWeather(Weather.formatTemp(c.temperature), desc.isEmpty() ? city : desc + " · " + city);
                 });
             } catch (Exception e) {
                 main.post(() -> {
-                    if (weatherTemp.getText().length() == 0) weatherText.setText(R.string.weather_error);
+                    if (!weatherShown) showWeather("", getString(R.string.weather_error));
                 });
             }
         });

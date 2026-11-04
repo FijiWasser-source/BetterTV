@@ -6,4 +6,9 @@
         <!-- Abdunkelung des Hintergrunds unter dem Glas (0..1) für Lesbarkeit -->
         <attr name="glassDim" format="float" />
     </declare-styleable>
+    <declare-styleable name="PixelText">
+        <attr name="pixelSize" format="dimension" />
+        <attr name="pixelColor" format="color" />
+        <attr name="blinkColon" format="boolean" />
+    </declare-styleable>
 </resources>

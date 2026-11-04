@@ -208,4 +208,47 @@ public class PreviewTest {
         sheet.setBackdrop(backdrop, Aurora.BLUR_DOWNSCALE);
         paparazzi.snapshot(stack, "menu");
     }
+
+    @Test
+    public void abend() {
+        View root = paparazzi.inflate(R.layout.activity_main_abend);
+        RecyclerView dock = root.findViewById(R.id.dock_list);
+        dock.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(
+                paparazzi.getContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false));
+        TileAdapter adapter = new TileAdapter(NOOP, R.layout.item_tile_abend, 1.06f, false, true);
+        dock.setAdapter(adapter);
+        List<AppEntry> list = new ArrayList<>();
+        for (int i = 0; i < NAMES.length; i++) {
+            list.add(new AppEntry("p" + i, NAMES[i], "p" + i, new FakeBanner(NAMES[i], COLORS[i]), null,
+                    new android.content.Intent(), true));
+        }
+        list.add(new AppEntry("klar:all", "Alle Apps", "", null,
+                paparazzi.getContext().getDrawable(R.drawable.ic_apps_color), null, false));
+        adapter.submit(list);
+
+        TextView greeting = root.findViewById(R.id.greeting);
+        greeting.setTypeface(Fonts.rounded(paparazzi.getContext()));
+        greeting.setText(MainActivity.greetingFor(19));
+        ((PixelText) root.findViewById(R.id.pixel_clock)).setText("19:27");
+        ((PixelText) root.findViewById(R.id.pixel_date)).setText("Mittwoch, 4. November");
+        ((PixelText) root.findViewById(R.id.pixel_weather)).setText("7° Bedeckt");
+        View cont = root.findViewById(R.id.continue_button);
+        cont.setVisibility(View.VISIBLE);
+        float d = paparazzi.getContext().getResources().getDisplayMetrics().density;
+        cont.setBackground(new AbendTile(d, -1));
+        TextView cl = root.findViewById(R.id.continue_label);
+        cl.setTypeface(Fonts.rounded(paparazzi.getContext()));
+        cl.setText("Netflix");
+
+        layout(root);
+        ((android.widget.ImageView) root.findViewById(R.id.wallpaper))
+                .setImageBitmap(AbendBackground.render(1920, 1080));
+        layout(root);
+        // Fokus auf der dritten Kachel nachstellen
+        View card = dock.getChildAt(2).findViewById(R.id.card);
+        ((AbendTile) card.getBackground()).setFocused(true);
+        card.setScaleX(1.06f); card.setScaleY(1.06f);
+        ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
+        paparazzi.snapshot(root, "abend");
+    }
 }
