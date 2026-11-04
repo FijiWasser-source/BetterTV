@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Nur für das Wetter (Open-Meteo, ohne Konto, ohne Tracking). -->
+    <!-- Wetter (Open-Meteo) und Handy-Fernbedienung im Heimnetz -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Nur ab Android 8: Fernbedienungs-Dienst im Hintergrund -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -51,5 +54,13 @@
             android:exported="false"
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|uiMode" />
+        <service
+            android:name=".remote.RemoteService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Fernbedienung per Handy im Heimnetz" />
+        </service>
     </application>
 </manifest>

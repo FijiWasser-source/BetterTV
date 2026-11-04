@@ -1,0 +1,24 @@
+package de.klar.tvlauncher;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.util.DisplayMetrics;
+
+import java.util.List;
+
+/** Schmale, öffentliche Schnittstelle für die Handy-Fernbedienung (Paket remote). */
+public final class KlarAccess {
+    private KlarAccess() {}
+
+    /** Alle sichtbaren Apps, Dock-Apps zuerst (in Dock-Reihenfolge). */
+    public static List<AppEntry> apps(Context c) {
+        return AppLoader.load(c, new Prefs(c));
+    }
+
+    /** Hintergrundbild der Startansicht in Bildschirmgröße. */
+    public static Bitmap wallpaper(Context c) {
+        DisplayMetrics m = c.getResources().getDisplayMetrics();
+        int w = Math.max(m.widthPixels, m.heightPixels), h = Math.min(m.widthPixels, m.heightPixels);
+        return Wallpaper.load(c, w, h).full;
+    }
+}

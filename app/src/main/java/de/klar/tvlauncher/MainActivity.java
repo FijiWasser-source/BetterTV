@@ -79,6 +79,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         root.post(this::applyWallpaper);
 
         if (prefs.firstRun()) Toast.makeText(this, R.string.hint, Toast.LENGTH_LONG).show();
+        de.klar.tvlauncher.remote.RemoteService.start(this);
     }
 
     private void applyWallpaper() {
@@ -169,6 +170,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
         new Sheet(this, getString(R.string.settings))
                 .button("Wetter-Ort: " + city, this::askCity)
+                .button("Handy-Fernbedienung", this::showRemoteInfo)
                 .button("Hintergrundbild", this::showWallpaperInfo)
                 .button("Ausgeblendete Apps (" + prefs.hidden().size() + ")", this::showHidden)
                 .button("Android-Einstellungen", () -> AppMenu.tryStart(this, new Intent(Settings.ACTION_SETTINGS)))
@@ -200,6 +202,23 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             });
         }
         sheet.button("Abbrechen", null).show();
+    }
+
+    private void showRemoteInfo() {
+        String url = de.klar.tvlauncher.remote.RemoteService.url();
+        int paired = de.klar.tvlauncher.remote.RemoteService.pairedCount(this);
+        Sheet sheet = new Sheet(this, "Handy-Fernbedienung")
+                .message(url == null ? "Keine Netzwerkverbindung."
+                        : "Am Handy im selben WLAN öffnen:\n\n" + url
+                        + "\n\nDie PIN zum Koppeln erscheint dann hier auf dem Fernseher."
+                        + (paired > 0 ? "\n\nGekoppelt: " + paired + (paired == 1 ? " Gerät" : " Geräte") : ""));
+        if (paired > 0) {
+            sheet.button("Alle Handys trennen", () -> {
+                de.klar.tvlauncher.remote.RemoteService.unpairAll(this);
+                Toast.makeText(this, "Getrennt", Toast.LENGTH_SHORT).show();
+            });
+        }
+        sheet.button("Fertig", null).show();
     }
 
     private void showWallpaperInfo() {

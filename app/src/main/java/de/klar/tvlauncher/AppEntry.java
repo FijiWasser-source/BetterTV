@@ -3,7 +3,8 @@ package de.klar.tvlauncher;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 
-final class AppEntry {
+/** Eine startbare App. Öffentlich lesbar für die Handy-Fernbedienung. */
+public final class AppEntry {
     final String key;
     final String label;
     final String packageName;
@@ -22,4 +23,12 @@ final class AppEntry {
         this.launchIntent = launchIntent;
         this.pinned = pinned;
     }
+
+    public String packageName() { return packageName; }
+    public String label() { return label; }
+    public boolean pinned() { return pinned; }
+    public boolean hasBanner() { return banner != null; }
+    public Drawable bannerDrawable() { return banner; }
+    public Drawable iconDrawable() { return icon; }
+    public Intent launch() { return launchIntent; }
 }

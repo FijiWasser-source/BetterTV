@@ -37,6 +37,29 @@ Fernsehern flüssig bleibt.
 | | Zurück | zur Startansicht |
 | überall | Home | Startansicht |
 
+## Handy-Fernbedienung (Web-App)
+
+Klar bringt eine Fernbedienung fürs Handy mit – im gleichen Midnight-Glas-Stil, ohne App-Download.
+
+1. Am Handy (im selben WLAN) öffnen: `http://<IP-des-TVs>:8080`
+   (steht auch in Klar unter *Einstellungen → Handy-Fernbedienung*).
+2. **PIN anzeigen** antippen – die PIN erscheint auf dem Fernseher – und eingeben.
+3. Als App ablegen: iPhone: Safari → *Teilen → Zum Home-Bildschirm*. Android: Chrome → ⋮ → *Zum Startbildschirm hinzufügen*.
+
+Bedienung: **Touchpad** wie bei der Siri Remote (wischen = bewegen, außen tippen = Pfeil,
+Mitte tippen = OK, außen halten = wiederholen), Zurück, Home, Play/Pause, Menü, Lautstärke,
+Stumm, Eingang, Aus, und **App-Kacheln** zum direkten Starten.
+
+**Pfeile, OK, Zurück, Eingang und Aus** laufen über Sonys Netzwerksteuerung und brauchen einmalig:
+*TV-Einstellungen → Netzwerk → Heimnetzwerk-Setup → IP-Steuerung → Authentifizierung
+„Normal und Pre-Shared Key“* und einen selbst gewählten Code, den du in der Web-App unter ⚙︎
+einträgst. Ohne Code funktionieren App-Start, Home, Play/Pause und Lautstärke.
+
+Sicherheit: nur im Heimnetz erreichbar; ohne PIN-Kopplung gibt es keinen Zugriff, nach 5 falschen
+PINs wird eine neue nötig. Gekoppelte Handys lassen sich in Klar unter *Einstellungen →
+Handy-Fernbedienung* trennen. Die Verbindung ist unverschlüsselt (HTTP) – für ein privates
+Heimnetz in Ordnung, nicht für offene WLANs.
+
 ## Eigenes Hintergrundbild
 
 JPG oder PNG, am besten 1920 × 1080. Andere Formate werden mittig zugeschnitten.
@@ -165,3 +188,5 @@ Aufbau: `MainActivity` (Startansicht mit Dock & Einstellungen), `AppLoader` (ins
 `AppsActivity` („Alle Apps“), `AppMenu` (gemeinsame App-Aktionen), `Favorites` (Standard-Dock, getestet),
 `Wallpaper` (Hintergrundbild), `Sheet` (Glas-Menüs), `GlassLayout` (Glas-Material),
 `Aurora` (Ersatz-Hintergrund + Weichzeichner), `Tint` (App-Farbe für Kacheln).
+Fernbedienung: `remote/RemoteHttp` (Server, getestet), `remote/SonyIrcc` (Sony-Tasten),
+`remote/AndroidBackend`, `remote/RemoteService`; Web-App in `app/src/main/assets/remote/`.
