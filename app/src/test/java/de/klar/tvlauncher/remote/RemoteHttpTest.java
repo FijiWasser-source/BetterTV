@@ -139,4 +139,17 @@ public class RemoteHttpTest {
         assertEquals(200, call("POST", "/api/unpair", "{}", token).status);
         assertEquals(401, call("GET", "/api/status", null, token).status);
     }
+
+    @Test public void busyPortFailsSoNextPortCanBeTried() throws Exception {
+        RemoteHttp second = new RemoteHttp(fake, name -> null);
+        try {
+            second.start(http.port());
+            org.junit.Assert.fail("Port war belegt, start() hätte scheitern müssen");
+        } catch (java.io.IOException expected) {
+            second.start(0); // nächster Versuch klappt
+            assertTrue(second.port() > 0);
+        } finally {
+            second.stop();
+        }
+    }
 }

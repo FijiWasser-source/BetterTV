@@ -208,7 +208,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         String url = de.klar.tvlauncher.remote.RemoteService.url();
         int paired = de.klar.tvlauncher.remote.RemoteService.pairedCount(this);
         Sheet sheet = new Sheet(this, "Handy-Fernbedienung")
-                .message(url == null ? "Keine Netzwerkverbindung."
+                .message(url == null ? "Fernbedienung nicht aktiv – keine Netzwerkverbindung oder kein freier Port."
                         : "Am Handy im selben WLAN öffnen:\n\n" + url
                         + "\n\nDie PIN zum Koppeln erscheint dann hier auf dem Fernseher."
                         + (paired > 0 ? "\n\nGekoppelt: " + paired + (paired == 1 ? " Gerät" : " Geräte") : ""));

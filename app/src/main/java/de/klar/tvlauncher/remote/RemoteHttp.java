@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -72,7 +72,16 @@ public final class RemoteHttp {
 
     public synchronized void start(int port) throws IOException {
         if (server != null) return;
-        server = new ServerSocket(port, 16, (InetAddress) null);
+        // ausdrücklich auf allen Adressen (IPv4 + IPv6) lauschen, nicht nur intern
+        ServerSocket s = new ServerSocket();
+        try {
+            s.setReuseAddress(true);
+            s.bind(new InetSocketAddress(port), 16);
+        } catch (IOException e) {
+            s.close();
+            throw e;
+        }
+        server = s;
         acceptor = new Thread(this::acceptLoop, "klar-remote");
         acceptor.setDaemon(true);
         acceptor.start();

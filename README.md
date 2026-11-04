@@ -41,7 +41,7 @@ Fernsehern flüssig bleibt.
 
 Klar bringt eine Fernbedienung fürs Handy mit – im gleichen Midnight-Glas-Stil, ohne App-Download.
 
-1. Am Handy (im selben WLAN) öffnen: `http://<IP-des-TVs>:8080`
+1. Am Handy (im selben WLAN) öffnen: `http://<IP-des-TVs>:8765`
    (steht auch in Klar unter *Einstellungen → Handy-Fernbedienung*).
 2. **PIN anzeigen** antippen – die PIN erscheint auf dem Fernseher – und eingeben.
 3. Als App ablegen: iPhone: Safari → *Teilen → Zum Home-Bildschirm*. Android: Chrome → ⋮ → *Zum Startbildschirm hinzufügen*.

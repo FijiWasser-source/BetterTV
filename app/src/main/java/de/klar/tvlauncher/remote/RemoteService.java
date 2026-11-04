@@ -18,7 +18,9 @@ import java.io.InputStream;
 /** Hält den Fernbedienungs-Server im Hintergrund am Laufen. */
 public class RemoteService extends Service {
 
-    public static final int PORT = 8080;
+    /** 8080 ist auf Sony-TVs schon von einem Systemdienst belegt – daher eigene Ports. */
+    static final int[] PORTS = {8765, 8766, 8767, 9876};
+    private static volatile int activePort = -1;
     private static final String CHANNEL = "remote";
     private RemoteHttp http;
     private AndroidBackend backend;
@@ -32,10 +34,11 @@ public class RemoteService extends Service {
         }
     }
 
-    /** Adresse, die man am Handy eingibt, z. B. http://192.168.178.39:8080 */
+    /** Adresse, die man am Handy eingibt, z. B. http://192.168.178.39:8765 */
     public static String url() {
         String ip = AndroidBackend.lanAddress();
-        return ip == null ? null : "http://" + ip + ":" + PORT;
+        if (ip == null || activePort < 0) return null;
+        return "http://" + ip + ":" + activePort;
     }
 
     /** Alle gekoppelten Handys trennen. */
@@ -53,11 +56,17 @@ public class RemoteService extends Service {
         if (Build.VERSION.SDK_INT >= 26) goForeground();
         backend = new AndroidBackend(this);
         http = new RemoteHttp(backend, this::asset);
-        try {
-            http.start(PORT);
-        } catch (IOException e) {
-            Log.w("Klar", "Port " + PORT + " belegt", e);
+        for (int port : PORTS) {
+            try {
+                http.start(port);
+                activePort = port;
+                Log.i("Klar", "Fernbedienung erreichbar auf Port " + port);
+                return;
+            } catch (IOException e) {
+                Log.w("Klar", "Port " + port + " belegt, versuche den nächsten");
+            }
         }
+        Log.e("Klar", "Kein freier Port für die Fernbedienung");
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
