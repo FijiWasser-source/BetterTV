@@ -21,6 +21,7 @@
     --key-hi: #4A4D54; --key-lo: #3E4147;
     --ink: #F4F4F5; --ink-soft: #A9ADB5;
     --muted: #C9CCD2;
+    --blue: #8FB4FF; /* Schrift-Akzent wie am Fernseher (Datum, Begrüßung) */
     --orange: #FF8A1F;
     --text: #FFFFFF;
     --r-tile: 16px;
@@ -63,12 +64,12 @@
 
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .greet { font-family: "KlarRound", -apple-system, sans-serif; font-weight: 800; font-size: 30px; line-height: 1.02; letter-spacing: -0.01em; margin: 0; }
-  .greet .l1 { color: var(--muted); display: block; }
+  .greet .l1 { color: var(--blue); display: block; }
   .greet .l2 { color: #fff; display: block; }
   .greet .accent { color: var(--orange); }
   .side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
   #clock { display: block; image-rendering: pixelated; }
-  .tv { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  .tv { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--blue); text-transform: uppercase; }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #30D158; margin-right: 5px; vertical-align: 1px; }
   .dot.off { background: #FF453A; }
 
@@ -92,7 +93,7 @@
   .app.down .num, .app:active .num { color: var(--orange); }
   .section { display: flex; align-items: baseline; justify-content: space-between; }
   .section h2 { margin: 0; font-family: "KlarRound", sans-serif; font-size: 20px; font-weight: 800; }
-  .section button { font-size: 15px; font-weight: 700; padding: 6px 2px; color: var(--orange); }
+  .section button { font-size: 15px; font-weight: 700; padding: 6px 2px; color: var(--blue); }
 
   /* Touchpad: blaue Scheibe, OK-Mitte etwas dunkler */
   .pad-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: var(--gap); min-height: 0; }
@@ -118,7 +119,7 @@
   .overlay { position: fixed; inset: 0; z-index: 5; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); padding: 16px 12px calc(env(safe-area-inset-bottom,0px) + 12px); }
   .overlay.show { display: flex; }
   .sheet { width: 100%; max-width: 460px; border-radius: 30px; padding: 24px 18px 18px; background: #2C2F34; border: 1.5px solid rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.45); color: #fff; }
-  .sheet h3 { margin: 0 0 6px; font-family: "KlarRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: #fff; }
+  .sheet h3 { margin: 0 0 6px; font-family: "KlarRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: var(--blue); }
   .sheet p { margin: 0 0 16px; font-size: 16px; text-align: center; }
   .sheet ol { margin: 0 0 16px; padding-left: 22px; font-size: 15px; line-height: 1.45; }
   .btn { display: block; width: 100%; height: 52px; border-radius: 14px; font-weight: 700; margin-top: 10px; background: linear-gradient(180deg, var(--key-hi), var(--key-lo)); color: var(--ink); border: 1.5px solid rgba(255,138,31,.75); box-shadow: 0 0 10px rgba(255,138,31,.25); }
