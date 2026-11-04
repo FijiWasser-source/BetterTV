@@ -28,13 +28,26 @@ final class RoundedDrawable extends Drawable {
 
     RoundedDrawable(Drawable source, float radius) { this(source, radius, IconStyle.ORIGINAL); }
 
-    RoundedDrawable(Drawable source, float radius, String style) {
+    private final float ring;      // > 0: leuchtender oranger Rand direkt um das Symbol (Breite in px)
+    private final RectF inner = new RectF();
+    private final Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    RoundedDrawable(Drawable source, float radius, String style) { this(source, radius, style, 0); }
+
+    RoundedDrawable(Drawable source, float radius, String style, float ring) {
+        this.ring = ring;
+        ringPaint.setStyle(Paint.Style.STROKE);
         this.style = style;
         this.source = source.getConstantState() != null ? source.getConstantState().newDrawable().mutate() : source;
         this.radius = radius;
     }
 
-    @Override protected void onBoundsChange(Rect b) {
+    @Override protected void onBoundsChange(Rect full) {
+        if (full.width() <= 0 || full.height() <= 0) return;
+        // Mit Leucht-Rand: Bild etwas einrücken, damit das Leuchten in den Rahmen passt
+        Rect b = new Rect(full);
+        if (ring > 0) b.inset(Math.round(ring), Math.round(ring));
+        inner.set(b);
         if (b.width() <= 0 || b.height() <= 0) return;
         if (cache != null) cache.recycle();
         cache = Bitmap.createBitmap(b.width(), b.height(), Bitmap.Config.ARGB_8888);
@@ -68,14 +81,30 @@ final class RoundedDrawable extends Drawable {
 
     @Override public void draw(Canvas c) {
         if (cache == null) return;
+        drawImageAndGlow(c);
+    }
+
+    private void drawImageAndGlow(Canvas c) {
+        // 1. Glas: Leuchten entlang der Logo-Form (unter dem Logo)
         if (halo != null) {
             haloPaint.setAlpha(focused ? 255 : 120);
-            Rect b = getBounds();
-            c.drawBitmap(halo, b.left, b.top, haloPaint);
-            if (focused) c.drawBitmap(halo, b.left, b.top, haloPaint); // doppelt = kräftiger
+            c.drawBitmap(halo, inner.left, inner.top, haloPaint);
+            if (focused) c.drawBitmap(halo, inner.left, inner.top, haloPaint); // doppelt = kräftiger
         }
-        rect.set(getBounds());
-        c.drawRoundRect(rect, radius, radius, paint);
+        // 2. das Bild selbst (mit runden Ecken)
+        c.drawRoundRect(inner, radius, radius, paint);
+        // 3. Dunkel/Orange/Blau: leuchtender oranger Rand direkt um das Symbol
+        if (ring > 0) {
+            float base = focused ? 0.34f : 0.16f;
+            for (int k = 4; k >= 1; k--) {
+                ringPaint.setStrokeWidth(ring * 0.22f * (1 + k));
+                ringPaint.setColor(((int) (255 * base / k) << 24) | 0xFF8A1F);
+                c.drawRoundRect(inner, radius, radius, ringPaint);
+            }
+            ringPaint.setStrokeWidth(ring * (focused ? 0.42f : 0.28f));
+            ringPaint.setColor(focused ? 0xFFFF8A1F : 0xD9FF8A1F);
+            c.drawRoundRect(inner, radius, radius, ringPaint);
+        }
     }
 
     @Override public int getIntrinsicWidth() { return source.getIntrinsicWidth(); }

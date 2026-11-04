@@ -85,6 +85,12 @@ final class IconStyle {
 
     static boolean isGlass(String style) { return GLASS.equals(style) || GLASS_ORANGE.equals(style); }
 
+    /** Dunkel / Orange / Blau: dunkles Symbol mit leuchtendem Rand direkt darum. */
+    static boolean isTinted(String style) { return DARK.equals(style) || ORANGE.equals(style) || BLUE.equals(style); }
+
+    /** Stile ohne Kachel-Hintergrund. */
+    static boolean freeStanding(String style) { return isGlass(style) || isTinted(style); }
+
     /** Logo-Maske 0..1 (0 = Hintergrund), gleiche Erkennung wie bei den Stilen. */
     static float[] mask(int[] px, int width) {
         int height = px.length / width;

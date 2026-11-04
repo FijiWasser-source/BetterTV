@@ -37,7 +37,7 @@ in zwei Höhen, Hügel und Wolken im Hintergrund (Parallax) und **Level**: alle 
 schneller. **Selbst spielen:** eine der **Farbtasten** (rot/grün/gelb/blau) oder **0** drücken – dann
 steuerst du (jeder Druck = Sprung), nach 20 s ohne Eingabe übernimmt Pixel wieder. Pixel **spricht**
 kurze Sprüche in Pixel-Schrift („Los geht's!“, „Autsch!“, „Level 3!“, „Viel Spaß!“) mit Plapper-Lauten.
-**App-Symbole** lassen sich einheitlich darstellen (*Einstellungen → App-Symbole*): Original,
+**App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
 **Musik & Sounds:** ein ruhiger, selbst erzeugter Lo-Fi-Loop und Retro-Effekte für Pixel (Sprung,

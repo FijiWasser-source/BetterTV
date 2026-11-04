@@ -100,17 +100,18 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         int color = colorOf(e);
         h.card.setTag(e.key);
         boolean glass = IconStyle.isGlass(iconStyle);
+        boolean free = IconStyle.freeStanding(iconStyle); // Glas, Dunkel, Orange, Blau: ohne Kachel
         if (abend && !(h.card.getBackground() instanceof AbendTile
-                && ((AbendTile) h.card.getBackground()).invisible == glass)) {
-            // Glas: keine Kachel, kein Rahmen – nur das leuchtende Glas-Logo
-            h.card.setBackground(new AbendTile(density, 16, false, glass));
-            if (h.label != null) h.label.setTextColor(AbendTile.INK);
+                && ((AbendTile) h.card.getBackground()).invisible == free)) {
+            h.card.setBackground(new AbendTile(density, 16, false, free));
         }
         if (abend) {
             boolean special = e.launchIntent == null; // "Alle Apps", "Einstellungen" behalten ihren Namen
-            if (h.label != null) h.label.setVisibility(glass && !special ? View.GONE : View.VISIBLE);
-            if (h.label != null && glass) h.label.setTextColor(0xFFFFFFFF);
-            if (h.number != null) h.number.setVisibility(glass ? View.GONE : View.VISIBLE);
+            if (h.label != null) {
+                h.label.setVisibility(glass && !special ? View.GONE : View.VISIBLE);
+                h.label.setTextColor(free ? 0xFFFFFFFF : AbendTile.INK);
+            }
+            if (h.number != null) h.number.setVisibility(free ? View.GONE : View.VISIBLE); // ohne Kachelecke keine Nummer (Tasten 1–9 gehen trotzdem)
         }
         if (h.number != null) {
             // Nummer = Taste auf der Fernbedienung (nur echte Apps, 1–9)
@@ -126,7 +127,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             // Runde Ecken im Design "Abend"; Symbol-Stil gilt überall in Klar
             boolean styleBanner = abend || !IconStyle.ORIGINAL.equals(iconStyle);
             float radius = abend && !glass ? 10 * density : 0;
-            h.banner.setImageDrawable(styleBanner ? new RoundedDrawable(e.banner, radius, iconStyle) : e.banner);
+            float ring = abend && IconStyle.isTinted(iconStyle) ? 6 * density : 0; // Leuchten direkt ums Symbol
+            h.banner.setImageDrawable(styleBanner ? new RoundedDrawable(e.banner, radius, iconStyle, ring) : e.banner);
             if (abend) { h.banner.setScaleX(glass ? 1.25f : 1f); h.banner.setScaleY(glass ? 1.25f : 1f); }
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
@@ -136,7 +138,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             h.icon.setVisibility(View.VISIBLE);
             // App-Symbole (nicht "Alle Apps"/"Einstellungen") im gewählten Stil
             boolean styled = e.launchIntent != null && !IconStyle.ORIGINAL.equals(iconStyle);
-            h.icon.setImageDrawable(styled ? new RoundedDrawable(e.icon, abend ? 10 * density : 0, iconStyle) : e.icon);
+            float iconRing = abend && IconStyle.isTinted(iconStyle) ? 5 * density : 0;
+            h.icon.setImageDrawable(styled ? new RoundedDrawable(e.icon, abend ? 10 * density : 0, iconStyle, iconRing) : e.icon);
             // Inhaltsebene: ruhige Fläche im Farbschema, nur leicht in Richtung App-Farbe
             if (tintIconTiles) {
                 h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));
@@ -171,9 +174,10 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             AbendTile.focus(h.card, focused);
             if (h.banner.getDrawable() instanceof RoundedDrawable) ((RoundedDrawable) h.banner.getDrawable()).setFocused(focused);
             if (h.icon.getDrawable() instanceof RoundedDrawable) ((RoundedDrawable) h.icon.getDrawable()).setFocused(focused);
-            boolean ol = h.card.getBackground() instanceof AbendTile && ((AbendTile) h.card.getBackground()).outline;
+            boolean ol = h.card.getBackground() instanceof AbendTile
+                    && (((AbendTile) h.card.getBackground()).outline || ((AbendTile) h.card.getBackground()).invisible);
             if (h.number != null) h.number.setTextColor(focused ? AbendTile.ORANGE : ol ? 0xFFA9ADB5 : AbendTile.INK_SOFT);
-            float s = focused ? (IconStyle.isGlass(iconStyle) ? 1.14f : focusScale) : 1f;
+            float s = focused ? (IconStyle.freeStanding(iconStyle) ? 1.12f : focusScale) : 1f;
             if (animate) h.card.animate().scaleX(s).scaleY(s).setInterpolator(ease).setDuration(160).start();
             else { h.card.setScaleX(s); h.card.setScaleY(s); }
             return;

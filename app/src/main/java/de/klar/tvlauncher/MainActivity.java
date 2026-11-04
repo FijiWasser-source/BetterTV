@@ -139,7 +139,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     /** "Weiter mit"-Knopf im Stil der Kacheln (bei Glas-Symbolen nur Umrandung). */
     private void applyPillStyle() {
         float d = getResources().getDisplayMetrics().density;
-        boolean glass = IconStyle.isGlass(prefs.iconStyle());
+        boolean glass = IconStyle.freeStanding(prefs.iconStyle()); // ohne Kachel -> Knopf nur mit Umrandung
         continueButton.setBackground(new AbendTile(d, -1, glass));
         continueLabel.setTextColor(glass ? 0xFFFFFFFF : AbendTile.INK);
         ((TextView) findViewById(R.id.continue_caption)).setTextColor(glass ? 0xFFA9ADB5 : AbendTile.INK_SOFT);

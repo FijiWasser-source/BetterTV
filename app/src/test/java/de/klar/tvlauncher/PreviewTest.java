@@ -263,9 +263,9 @@ public class PreviewTest {
         View cont = root.findViewById(R.id.continue_button);
         cont.setVisibility(View.VISIBLE);
         float d = paparazzi.getContext().getResources().getDisplayMetrics().density;
-        cont.setBackground(new AbendTile(d, -1, IconStyle.isGlass(style)));
+        cont.setBackground(new AbendTile(d, -1, IconStyle.freeStanding(style)));
         TextView cl = root.findViewById(R.id.continue_label);
-        if (IconStyle.isGlass(style)) {
+        if (IconStyle.freeStanding(style)) {
             cl.setTextColor(0xFFFFFFFF);
             ((TextView) root.findViewById(R.id.continue_caption)).setTextColor(0xFFA9ADB5);
         }
@@ -278,6 +278,9 @@ public class PreviewTest {
         // Fokus auf der dritten Kachel nachstellen
         View card = dock.getChildAt(2).findViewById(R.id.card);
         AbendTile.focus(card, true); // wie auf dem TV: Software-Ebene für das Leuchten
+        android.widget.ImageView fb = card.findViewById(R.id.banner);
+        if (fb.getDrawable() instanceof RoundedDrawable) ((RoundedDrawable) fb.getDrawable()).setFocused(true);
+        if (IconStyle.freeStanding(style)) { card.setScaleX(1.12f); card.setScaleY(1.12f); }
         card.setScaleX(1.06f); card.setScaleY(1.06f);
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
         ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
