@@ -86,7 +86,7 @@
                                 android:includeFontPadding="false"
                                 android:letterSpacing="0.12"
                                 android:text="@string/continue_with"
-                                android:textColor="#7A766E"
+                                android:textColor="#8C7A5E"
                                 android:textSize="9sp"
                                 android:textStyle="bold" />
 
@@ -95,7 +95,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:includeFontPadding="false"
-                                android:textColor="#26282C"
+                                android:textColor="#2E2922"
                                 android:textSize="16sp" />
                         </LinearLayout>
                     </LinearLayout>

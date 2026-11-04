@@ -12,7 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 
 /**
- * Kachel-Hintergrund für das Design "Abend": Off-White-Fläche mit feiner Kante;
+ * Kachel-Hintergrund für das Design "Abend": helle, cremig-beige Fläche mit feiner Kante;
  * fokussiert mit oranger Kante und Leuchten. Der Leuchtrand liegt innerhalb der
  * View ({@link #GLOW_DP}), damit er nicht abgeschnitten wird.
  */
@@ -20,8 +20,8 @@ final class AbendTile extends Drawable {
     static final float GLOW_DP = 10f;
     static final int ORANGE = 0xFFFF8A1F;
     /** Schrift auf den hellen Kacheln */
-    static final int INK = 0xFF26282C;
-    static final int INK_SOFT = 0xFF8A867E;
+    static final int INK = 0xFF2E2922;
+    static final int INK_SOFT = 0xFF8C7A5E;
 
     private final float density;
     private final float radius; // < 0 = Kapsel
@@ -58,7 +58,7 @@ final class AbendTile extends Drawable {
     @Override protected void onBoundsChange(Rect b) {
         float m = GLOW_DP * density;
         r.set(b.left + m, b.top + m, b.right - m, b.bottom - m);
-        fill.setShader(new LinearGradient(0, r.top, 0, r.bottom, 0xFFF6F3EE, 0xFFE7E3DB, Shader.TileMode.CLAMP));
+        fill.setShader(new LinearGradient(0, r.top, 0, r.bottom, 0xFFF2E6CF, 0xFFE4D3B4, Shader.TileMode.CLAMP));
     }
 
     @Override public void draw(Canvas c) {
@@ -66,7 +66,7 @@ final class AbendTile extends Drawable {
         if (focused) c.drawRoundRect(r, rad, rad, glow);
         c.drawRoundRect(r, rad, rad, fill);
         rim.setStrokeWidth((focused ? 2.5f : 1.5f) * density);
-        rim.setColor(focused ? ORANGE : 0x40FFFFFF);
+        rim.setColor(focused ? ORANGE : 0x66FFF8EA);
         float h = rim.getStrokeWidth() / 2f;
         RectF in = new RectF(r.left + h, r.top + h, r.right - h, r.bottom - h);
         c.drawRoundRect(in, rad - h, rad - h, rim);
