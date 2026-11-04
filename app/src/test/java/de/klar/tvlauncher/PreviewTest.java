@@ -248,6 +248,17 @@ public class PreviewTest {
         ((AbendTile) card.getBackground()).setFocused(true);
         card.setScaleX(1.06f); card.setScaleY(1.06f);
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
+        ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
         paparazzi.snapshot(root, "abend");
+    }
+
+    @Test
+    public void mascot() {
+        android.widget.FrameLayout f = new android.widget.FrameLayout(paparazzi.getContext());
+        f.setBackground(AbendBackground.create(paparazzi.getContext()));
+        Mascot m = new Mascot(paparazzi.getContext());
+        f.addView(m, new android.widget.FrameLayout.LayoutParams(-2, -2, android.view.Gravity.CENTER));
+        m.preview(Mascot.Emote.HEART, false);
+        paparazzi.snapshot(f, "mascot");
     }
 }

@@ -56,6 +56,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private TextView greeting;
     private PixelText pixelClock, pixelDate, pixelWeather;
     private View continueButton;
+    private Mascot mascot;
     private TextView continueLabel;
     private final Runnable clockTick = new Runnable() {
         @Override public void run() {
@@ -107,6 +108,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         pixelClock = findViewById(R.id.pixel_clock);
         pixelDate = findViewById(R.id.pixel_date);
         pixelWeather = findViewById(R.id.pixel_weather);
+        mascot = findViewById(R.id.mascot);
         continueButton = findViewById(R.id.continue_button);
         continueLabel = findViewById(R.id.continue_label);
         continueLabel.setTypeface(Fonts.rounded(this));
@@ -248,7 +250,18 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     @Override
     public void onFocus(AppEntry entry) {
         if (dockLabel != null) dockLabel.setText(entry.label);
-        if (abend) dockList.smoothScrollToPosition(Math.max(0, adapter.indexOf(entry.key)));
+        if (abend) {
+            dockList.smoothScrollToPosition(Math.max(0, adapter.indexOf(entry.key)));
+            // Maskottchen schaut zur gewählten Kachel
+            View f = getCurrentFocus();
+            if (f != null && mascot != null) {
+                int[] a = new int[2], b = new int[2];
+                f.getLocationOnScreen(a);
+                mascot.getLocationOnScreen(b);
+                float dx = (a[0] + f.getWidth() / 2f) - (b[0] + mascot.getWidth() / 2f);
+                mascot.lookAt(Math.abs(dx) < f.getWidth() / 2f ? 0 : Math.signum(dx));
+            }
+        }
     }
 
     @Override
@@ -256,6 +269,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         focusKey = entry.key;
         if (KEY_ALL.equals(entry.key)) { startActivity(new Intent(this, AppsActivity.class)); return; }
         if (KEY_SETTINGS.equals(entry.key)) { showSettings(); return; }
+        if (mascot != null) mascot.cheer();
         AppMenu.open(this, entry);
     }
 
