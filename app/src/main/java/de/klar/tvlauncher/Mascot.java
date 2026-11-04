@@ -46,6 +46,8 @@ public class Mascot extends View {
         default void onLand() {}
         default void onLevelUp(int level) {}
         default void onTalk(String text) {}
+        /** Ein Stein bröckelt ab (Bildschirmkoordinaten, Größe in px). */
+        default void onCrumble(float screenX, float screenY, float size, int color) {}
     }
 
     private Events events;
@@ -163,6 +165,11 @@ public class Mascot extends View {
     }
 
     public boolean isManual() { return manual; }
+
+    public int level() { return level; }
+
+    private long lastCrumbled = Long.MIN_VALUE;
+    private final int[] screen = new int[2];
 
     /** Kurzer Spruch in einer Sprechblase. */
     public void say(String text) {
@@ -593,6 +600,14 @@ public class Mascot extends View {
             if (xCells > trackCells) break;
             if (xCells + BLOCK < 1) continue;
             float[] st = blockState(xCells + BLOCK / 2, trackCells, i);
+            if (events != null && forceNight == null && !sleeping && i > lastCrumbled && st[0] > 0 && st[0] < 4 && xCells < BREAK_ZONE) {
+                lastCrumbled = i;
+                int every = Math.max(1, 4 - (level - 1) / 2);   // Level 1–2: jeder 4., 3–4: 3., 5–6: 2., ab 7: jeder
+                if (i % every == 0) {
+                    getLocationOnScreen(screen);
+                    events.onCrumble(screen[0] + Math.max(cell, xCells * cell), screen[1] + ground + st[0] * cell, BLOCK * cell * 0.8f, colors[1]);
+                }
+            }
             if (st[1] <= 0.01f) continue;
             float x0 = Math.max(cell, xCells * cell), x1 = Math.min(getWidth() - cell, (xCells + BLOCK) * cell);
             if (x1 <= x0) continue;

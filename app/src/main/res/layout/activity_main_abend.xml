@@ -169,4 +169,10 @@
             android:overScrollMode="never"
             android:paddingEnd="64dp" />
     </LinearLayout>
+
+    <!-- Über allem: fallende Steine und "Schluck", der sie auf der ersten App einsaugt -->
+    <de.klar.tvlauncher.HelperLayer
+        android:id="@+id/helper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </FrameLayout>

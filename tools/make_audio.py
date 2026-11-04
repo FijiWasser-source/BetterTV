@@ -206,6 +206,34 @@ def sfx_engine():
         k = i / fade; s[i] = s[i] * k + s[n - fade + i] * (1 - k)
     return s[:n - fade]
 
+def sfx_suck():
+    # kurzes "Schlürfen": gefiltertes Rauschen, dessen Klangfarbe nach oben gleitet
+    n = int(0.22 * SR); s = []; y = 0.0
+    for i in range(n):
+        t = i / SR
+        k = 0.05 + 0.5 * (t / 0.22)               # Filter öffnet sich -> heller
+        y += k * (random.uniform(-1, 1) - y)
+        env = min(1, t / 0.03) * (1 - t / 0.22)
+        s.append(y * env)
+    return s
+
+def sfx_crunch():
+    # Knuspern: drei kurze, raue Bisse
+    n = int(0.3 * SR); s = []
+    for i in range(n):
+        t = i / SR; v = 0
+        for st in (0.0, 0.09, 0.19):
+            if t >= st:
+                tt = t - st
+                v += random.uniform(-1, 1) * math.exp(-tt * 45) * (0.8 if st else 1)
+        s.append(v)
+    y = 0.0; out_ = []
+    for v in s:
+        y += 0.45 * (v - y); out_.append(y)
+    return out_
+
+write(out + "/sfx_suck.wav", sfx_suck(), 0.3)
+write(out + "/sfx_crunch.wav", sfx_crunch(), 0.35)
 write(out + "/sfx_engine.wav", sfx_engine(), 0.3)
 write(out + "/sfx_jump.wav", sfx_jump(), 0.35)
 write(out + "/sfx_talk.wav", sfx_talk(), 0.3)

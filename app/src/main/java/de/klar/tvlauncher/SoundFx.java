@@ -16,7 +16,7 @@ final class SoundFx {
 
     private final Context context;
     private SoundPool pool;
-    private int jump, star, bump, talk, levelUp, land, engine;
+    private int jump, star, bump, talk, levelUp, land, engine, suck, crunch;
     private int engineStream; private boolean engineWanted, engineLoaded;
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final java.util.Random rnd = new java.util.Random();
@@ -39,7 +39,7 @@ final class SoundFx {
         AudioAttributes attrs = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
-        pool = new SoundPool.Builder().setMaxStreams(3).setAudioAttributes(attrs).build();
+        pool = new SoundPool.Builder().setMaxStreams(5).setAudioAttributes(attrs).build();
         jump = pool.load(context, R.raw.sfx_jump, 1);
         star = pool.load(context, R.raw.sfx_star, 1);
         bump = pool.load(context, R.raw.sfx_bump, 1);
@@ -47,6 +47,8 @@ final class SoundFx {
         levelUp = pool.load(context, R.raw.sfx_levelup, 1);
         land = pool.load(context, R.raw.sfx_land, 1);
         engine = pool.load(context, R.raw.sfx_engine, 1);
+        suck = pool.load(context, R.raw.sfx_suck, 1);
+        crunch = pool.load(context, R.raw.sfx_crunch, 1);
         pool.setOnLoadCompleteListener((p, id, status) -> {
             if (id == engine && status == 0) { engineLoaded = true; if (engineWanted) startEngine(); }
         });
@@ -57,6 +59,8 @@ final class SoundFx {
     void bump() { play(bump, 0.9f); }
     void land() { play(land, 0.7f); }
     void levelUp() { play(levelUp, 1f); }
+    void suck() { play(suck, 0.45f); }
+    void crunch() { play(crunch, 0.8f); }
 
     /** Plapper-Laute zum Spruch: eine Silbe je zwei Buchstaben, Tonhöhe leicht wechselnd. */
     void talk(String text) {

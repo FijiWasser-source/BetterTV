@@ -43,6 +43,10 @@ Flugzeuge mit Kondensstreifen, ein Heißluftballon, tagsüber eine Sonne, abends
 Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps. Hinter Pixel fährt ein kleines
 **Pixel-Auto** (eigene Figur) her: drehende Räder, Rauch aus dem Auspuff, hüpft über Hindernisse, rückt
 näher, wenn Pixel stolpert, und brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
+Die wegbröckelnden Steine fallen herunter und werden zur **ersten App** gezogen: Dort steht **Schluck**
+(eigene Figur, lange Arme und Beine) und saugt sie ein – Level 1–2 entspannt (jeder 4. Stein), mit
+steigendem Level immer mehr und hektischer (ab Level 5 Schweißtropfen, ab Level 7 jeder Stein). Ab
+Level 4 beißt er manchmal ab („Mampf!“, Krümel, Knuspern). Nachts schläft er.
 **App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).

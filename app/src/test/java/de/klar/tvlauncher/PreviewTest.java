@@ -285,6 +285,9 @@ public class PreviewTest {
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
         ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
         ((SkyLayer) root.findViewById(R.id.sky)).preview(19);
+        HelperLayer helper = root.findViewById(R.id.helper);
+        helper.attach((Mascot) root.findViewById(R.id.mascot), dock, null);
+        helper.preview(IconStyle.DARK.equals(style) ? 6 : 2, IconStyle.DARK.equals(style));
         paparazzi.snapshot(root, name);
     }
 

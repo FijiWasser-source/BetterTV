@@ -58,6 +58,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private View continueButton;
     private Mascot mascot;
     private SoundFx sound;
+    private HelperLayer helper;
     private TextView continueLabel;
     private final Runnable clockTick = new Runnable() {
         @Override public void run() {
@@ -120,6 +121,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             @Override public void onLand() { sound.land(); }
             @Override public void onLevelUp(int level) { sound.levelUp(); }
             @Override public void onTalk(String text) { sound.talk(text); }
+            @Override public void onCrumble(float x, float y, float size, int color) { helper.addPiece(x, y, size, color); }
         });
         continueButton = findViewById(R.id.continue_button);
         continueLabel = findViewById(R.id.continue_label);
@@ -134,6 +136,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         adapter = new TileAdapter(this, R.layout.item_tile_abend, 1.06f, false, true);
         adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
+        helper = findViewById(R.id.helper);
+        helper.attach(mascot, dockList, new HelperLayer.Events() {
+            @Override public void onSuck() { sound.suck(); }
+            @Override public void onCrunch() { sound.crunch(); }
+        });
     }
 
     /** "Weiter mit"-Knopf im Stil der Kacheln (bei Glas-Symbolen nur Umrandung). */
