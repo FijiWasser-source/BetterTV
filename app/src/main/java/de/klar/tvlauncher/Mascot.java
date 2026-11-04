@@ -406,7 +406,7 @@ public class Mascot extends View {
         if (running) postInvalidateDelayed(33); // ~30 Bilder/s reichen und schonen den TV
     }
 
-    /** Hügel und Wolken, die langsamer vorbeiziehen (Tiefe). */
+    /** Ferne Hügel, die langsamer vorbeiziehen (Tiefe). Wolken & Co. zeichnet der SkyLayer. */
     private void drawBackdrop(Canvas c, float ground) {
         float left = cell, right = getWidth() - cell;
         // ferne Hügel (Treppen-Silhouette, sehr dezent)
@@ -417,15 +417,6 @@ public class Mascot extends View {
             int hgt = (int) Math.round(3 + 2.2 * Math.sin(u) + 1.3 * Math.sin(u * 2.7 + 1));
             rect.set(x, ground - hgt * cell, x + cell + 0.5f, ground);
             c.drawRect(rect, paint);
-        }
-        // Wolken
-        paint.setColor(0x1FFFFFFF);
-        float span = right - left, drift = (scroll * 0.12f * cell) % span;
-        for (int k = 0; k < 3; k++) {
-            float cx = left + ((k * span / 3f - drift) % span + span) % span;
-            float cy = ground - (16 + k * 4) * cell;
-            rect.set(cx, cy, cx + 6 * cell, cy + cell); c.drawRect(rect, paint);
-            rect.set(cx + cell, cy - cell, cx + 4 * cell, cy); c.drawRect(rect, paint);
         }
     }
 
@@ -448,24 +439,64 @@ public class Mascot extends View {
         return true;
     }
 
-    private void drawTrack(Canvas c, float ground, boolean sleeping) {
-        float left = cell, right = getWidth() - cell;
-        // Oberfläche + Seitenwand, Enden abgestuft wie Pixel-Art
-        int[] colors = {0xFFA3A7AE, 0xFF868A92, 0xFF4A4D54, 0xFF3C3E44, 0xFF2E3035};
-        for (int r = 0; r < colors.length; r++) {
-            float inset = r == 0 ? cell : r >= 3 ? cell * (r - 2) : 0;
-            paint.setColor(colors[r]);
-            rect.set(left + inset, ground + r * cell, right - inset, ground + (r + 1) * cell + 0.5f);
-            c.drawRect(rect, paint);
+    // Bahn aus Steinblöcken (je 2 Zellen breit): baut sich rechts auf, bröckelt links ab
+    private static final float BLOCK = 2f, BUILD_ZONE = 14f, BREAK_ZONE = 9f;
+
+    /** Pseudo-Zufall je Block (stabil, damit jeder Stein "seine" Verzögerung behält). */
+    private static float jitter(long i) {
+        long h = i * 0x9E3779B97F4A7C15L;
+        h ^= (h >>> 31);
+        return ((h >>> 11) & 0xFFFF) / 65535f;
+    }
+
+    /**
+     * Versatz eines Blocks an Bildschirmposition x (in Zellen): {dy in Zellen, Deckkraft 0..1}.
+     * Rechts fällt er von oben herein, links fällt er nach unten weg.
+     */
+    private float[] blockState(float xCells, float trackCells, long index) {
+        float j = jitter(index) * 0.35f;
+        float fromRight = (trackCells - 1 - xCells) / BUILD_ZONE - j;      // < 1: wird gerade gebaut
+        float fromLeft = (xCells - 1) / BREAK_ZONE - j;                       // < 1: bröckelt gerade
+        if (fromRight < 1) {
+            float p = Math.max(0, fromRight);
+            float e = 1 - p;
+            return new float[]{-e * e * 12, Math.min(1, p * 1.6f)};
         }
-        // Kiesel auf der Oberfläche scrollen mit
-        paint.setColor(0xFF767A82);
-        float period = 9 * cell;
-        float off = -((scroll * cell) % period);
-        for (float x = left + off; x < right; x += period) {
-            if (x < left + cell) continue;
-            px(c, x, ground + cell);
-            if (x + 4 * cell < right - cell) px(c, x + 4 * cell, ground + cell * 1.5f, 0.5f);
+        if (fromLeft < 1) {
+            float p = Math.max(0, fromLeft);
+            float e = 1 - p;
+            return new float[]{e * e * 9, Math.min(1, p * 1.4f)};
+        }
+        return new float[]{0, 1};
+    }
+
+    private void drawTrack(Canvas c, float ground, boolean sleeping) {
+        float trackCells = getWidth() / cell;
+        int[] colors = {0xFFA3A7AE, 0xFF868A92, 0xFF4A4D54, 0xFF3C3E44, 0xFF2E3035};
+        long first = (long) Math.floor(scroll / BLOCK) - 1;
+        for (long i = first; ; i++) {
+            float xCells = i * BLOCK - scroll;                 // linke Kante des Blocks in Zellen
+            if (xCells > trackCells) break;
+            if (xCells + BLOCK < 1) continue;
+            float[] st = blockState(xCells + BLOCK / 2, trackCells, i);
+            if (st[1] <= 0.01f) continue;
+            float x0 = Math.max(cell, xCells * cell), x1 = Math.min(getWidth() - cell, (xCells + BLOCK) * cell);
+            if (x1 <= x0) continue;
+            float dy = st[0] * cell;
+            int alpha = Math.round(st[1] * 255);
+            for (int r = 0; r < colors.length; r++) {
+                paint.setColor((alpha << 24) | (colors[r] & 0xFFFFFF));
+                rect.set(x0, ground + r * cell + dy, x1 + 0.5f, ground + (r + 1) * cell + 0.5f + dy);
+                c.drawRect(rect, paint);
+            }
+            // feine Fuge zwischen den Steinen + Kiesel
+            paint.setColor((Math.round(alpha * 0.5f) << 24) | 0x2E3035);
+            rect.set(x0, ground + dy, x0 + 1, ground + 2 * cell + dy);
+            c.drawRect(rect, paint);
+            if (jitter(i * 7 + 3) > 0.6f) {
+                paint.setColor((alpha << 24) | 0x767A82);
+                px(c, x0 + cell * 0.6f, ground + cell + dy, 0.5f);
+            }
         }
     }
 
@@ -486,6 +517,8 @@ public class Mascot extends View {
             drawIcon(c, STAR, x, ground - (th.y + th.h()) * cell + bobS, cell * 0.8f);
             return;
         }
+        float[] st = blockState(th.x + th.w() / 2, getWidth() / cell, (long) Math.floor((th.x + scroll) / BLOCK));
+        ground += st[0] * cell;
         float w = th.w() * cell, h = th.h() * cell, top = ground - h;
         if (th.type == 1) { // Kiste
             paint.setColor(0xFFC98A4B); rect.set(x, top, x + w, ground); c.drawRect(rect, paint);

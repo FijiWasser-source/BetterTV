@@ -15,6 +15,12 @@
         android:importantForAccessibility="no"
         android:scaleType="fitXY" />
 
+    <!-- Pixel-Himmel: Wolken, Vögel, Flugzeuge … hinter allem anderen -->
+    <de.klar.tvlauncher.SkyLayer
+        android:id="@+id/sky"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

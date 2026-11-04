@@ -284,6 +284,7 @@ public class PreviewTest {
         card.setScaleX(1.06f); card.setScaleY(1.06f);
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
         ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
+        ((SkyLayer) root.findViewById(R.id.sky)).preview(19);
         paparazzi.snapshot(root, name);
     }
 
