@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Klar Fernbedienung</title>
+<title>BetterTV Fernbedienung</title>
 <meta name="theme-color" content="#0B1017">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Klar">
+<meta name="apple-mobile-web-app-title" content="BetterTV">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
   /* Design "Abend" wie am Fernseher: Grau mit Punkteraster, Blau #8FB4FF, Orange als Akzent */
-  @font-face { font-family: "KlarRound"; src: url("Nunito-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+  @font-face { font-family: "BTVRound"; src: url("Nunito-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
   :root {
     --bg-top: #383B41; --bg-mid: #2C2F34; --bg-bottom: #222428;
     /* Tasten: helleres Grau als der Hintergrund, leicht leuchtender oranger Rand */
@@ -69,7 +69,7 @@
 
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex: none; }
   header > .greet { flex: 1 1 auto; min-width: 0; }
-  .greet { font-family: "KlarRound", -apple-system, sans-serif; font-weight: 800; font-size: clamp(22px, 7vw, 30px); line-height: 1.04; letter-spacing: -0.01em; margin: 0; }
+  .greet { font-family: "BTVRound", -apple-system, sans-serif; font-weight: 800; font-size: clamp(22px, 7vw, 30px); line-height: 1.04; letter-spacing: -0.01em; margin: 0; }
   .greet .l1 { color: var(--blue); display: block; }
   .greet .l2 { color: #fff; display: block; }
   .greet .accent { color: var(--orange); }
@@ -101,7 +101,7 @@
   .app.down .tile, .app:active .tile { transform: scale(1.06); box-shadow: 0 0 0 2.5px var(--orange), 0 0 22px 5px rgba(255,138,31,.6); }
   .section { display: flex; align-items: center; justify-content: space-between; }
   .sec-right { display: flex; align-items: center; gap: 14px; }
-  .section h2 { margin: 0; font-family: "KlarRound", sans-serif; font-size: 20px; font-weight: 800; }
+  .section h2 { margin: 0; font-family: "BTVRound", sans-serif; font-size: 20px; font-weight: 800; }
   .section button { font-size: 15px; font-weight: 700; padding: 6px 2px; color: var(--blue); }
 
   /* Touchpad: blaue Scheibe, OK-Mitte etwas dunkler */
@@ -115,7 +115,7 @@
   #pad .down { bottom: 3%; left: 38%; }
   #pad .left { left: 3%; top: 38%; }
   #pad .right { right: 3%; top: 38%; }
-  #pad .ok { pointer-events: none; position: absolute; inset: 31%; border-radius: 50%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,138,31,.35); color: var(--ink); display: grid; place-items: center; font-family: "KlarRound", sans-serif; font-weight: 800; font-size: clamp(15px, 5.5vw, 21px); transition: box-shadow .12s, background-color .12s; }
+  #pad .ok { pointer-events: none; position: absolute; inset: 31%; border-radius: 50%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,138,31,.35); color: var(--ink); display: grid; place-items: center; font-family: "BTVRound", sans-serif; font-weight: 800; font-size: clamp(15px, 5.5vw, 21px); transition: box-shadow .12s, background-color .12s; }
   #pad.flash .ok { background: rgba(255,138,31,.22); border-color: var(--orange); box-shadow: 0 0 18px 3px rgba(255,138,31,.5); }
   #pad .ripple { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,138,31,.55); transform: translate(-50%,-50%); pointer-events: none; opacity: 0; }
 
@@ -131,7 +131,7 @@
   .overlay { position: fixed; inset: 0; z-index: 5; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); padding: 16px 12px calc(env(safe-area-inset-bottom,0px) + 12px); }
   .overlay.show { display: flex; }
   .sheet { width: 100%; max-width: 460px; border-radius: 30px; padding: 24px 18px 18px; background: #2C2F34; border: 1.5px solid rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.45); color: #fff; }
-  .sheet h3 { margin: 0 0 6px; font-family: "KlarRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: var(--blue); }
+  .sheet h3 { margin: 0 0 6px; font-family: "BTVRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: var(--blue); }
   .sheet p { margin: 0 0 16px; font-size: 16px; text-align: center; }
   .sheet { max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .sheet .part { margin-top: 26px; padding-top: 20px; border-top: 1.5px solid rgba(255,255,255,.1); }
@@ -221,7 +221,7 @@
 <div class="overlay" id="settings">
   <div class="sheet">
     <h3>Pfeile, OK &amp; Zurück</h3>
-    <p>Dafür braucht Klar die Sony-Netzwerksteuerung. Einmalig am Fernseher:</p>
+    <p>Dafür braucht BetterTV die Sony-Netzwerksteuerung. Einmalig am Fernseher:</p>
     <ol>
       <li>Einstellungen → Netzwerk → Heimnetzwerk-Setup → <b>IP-Steuerung</b></li>
       <li>Authentifizierung: <b>Normal und Pre-Shared Key</b></li>
@@ -262,7 +262,7 @@
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} },
   };
-  let token = store.get('klar-token');
+  let token = store.get('bettertv-token');
   let allApps = [], showAll = false;
 
   const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
@@ -276,13 +276,13 @@
 
   async function api(path, body) {
     const opts = { method: body === undefined ? 'GET' : 'POST', headers: {} };
-    if (token) opts.headers['X-Klar-Token'] = token;
+    if (token) opts.headers['X-BetterTV-Token'] = token;
     if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
     let res;
     try { res = await fetch(path, opts); }
     catch (e) { setOnline(false); throw e; }
     setOnline(true);
-    if (res.status === 401) { token = null; store.set('klar-token', null); showPair(); throw new Error('unpaired'); }
+    if (res.status === 401) { token = null; store.set('bettertv-token', null); showPair(); throw new Error('unpaired'); }
     return res;
   }
 
@@ -312,7 +312,7 @@
     try { res = await fetch('api/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) }); }
     catch (e) { $('pair-err').textContent = 'Fernseher nicht erreichbar.'; return; }
     if (res.ok) {
-      token = (await res.json()).token; store.set('klar-token', token);
+      token = (await res.json()).token; store.set('bettertv-token', token);
       $('pair').classList.remove('show'); start();
     } else if (res.status === 429) {
       $('pin').hidden = true; $('btn-pin').textContent = 'Neue PIN anzeigen';
@@ -489,7 +489,7 @@
   $('btn-cal-off').addEventListener('click', () => saveCalendar(''));
   $('btn-unpair').addEventListener('click', async () => {
     try { await api('api/unpair', {}); } catch (e) {}
-    token = null; store.set('klar-token', null);
+    token = null; store.set('bettertv-token', null);
     $('settings').classList.remove('show'); showPair();
   });
   document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('click', (e) => {

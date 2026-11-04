@@ -28,7 +28,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Klar">
+        android:theme="@style/Theme.BetterTV">
 
         <activity
             android:name=".MainActivity"

@@ -4,20 +4,34 @@ plugins {
 }
 
 android {
-    namespace 'de.klar.tvlauncher'
+    namespace 'de.bettertv.launcher'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'de.klar.tvlauncher'
+        applicationId 'de.bettertv.launcher'
         minSdk 21
         targetSdk 35
         versionCode 41
         versionName "5.5"
     }
 
+    // Release-Signatur nur aus Umgebungsvariablen (GitHub-Secrets), nie im Repo.
+    def ks = System.getenv('BETTERTV_KEYSTORE')
+    signingConfigs {
+        if (ks) {
+            release {
+                storeFile file(ks)
+                storePassword System.getenv('BETTERTV_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('BETTERTV_KEY_ALIAS')
+                keyPassword System.getenv('BETTERTV_KEY_PASSWORD')
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (ks) signingConfig signingConfigs.release
         }
     }
 

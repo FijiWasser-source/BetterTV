@@ -1,251 +1,176 @@
-# Klar – werbefreie Startseite für Android TV / Google TV
+# BetterTV
 
-Eine ruhige Startansicht statt der Android-TV-Oberfläche mit Empfehlungs- und Werbezeilen:
-**dein Hintergrundbild, Uhrzeit, Wetter und ein Glas-Dock** mit den wichtigsten Apps
-(Netflix, YouTube, Prime Video, Play Store, Arte, HBO Max, Disney+ – sofern installiert).
-Am Ende des Docks: **Alle Apps** und **Einstellungen**. Alles andere bleibt aus dem Blick.
+**Eine werbefreie, ruhige Startseite für Android TV und Google TV.** Statt Empfehlungs- und
+Werbezeilen: deine Apps, Uhr, Wetter, deine Termine – und ein kleines Pixel-Jump-and-Run.
 
-Gestaltet nach Apples Liquid-Glass-Richtlinien im Farbschema **Midnight** (tiefes Schwarzblau):
+![Startansicht am Morgen](app/src/test/snapshots/images/de.bettertv.launcher_PreviewTest_morgen_morgen.png)
 
-| Ebene | Elemente | Gestaltung |
+- **Keine Werbung, keine Empfehlungen, kein Tracking.** Einstellungen bleiben auf dem Gerät.
+- **Große App-Kacheln** mit Fernbedienung bedienbar, Zifferntasten **1–9** starten Apps direkt.
+- **Uhr, Datum und Wetter** (Open-Meteo: ohne Konto, ohne API-Schlüssel).
+- **Tagesübersicht „HEUTE“:** morgens das Wetter für den Tag und deine Termine (Google Kalender
+  oder jeder andere iCal-Kalender).
+- **Handy-Fernbedienung** als Web-App – ohne App-Download.
+- **Pixel**, ein eigenes Pixel-Maskottchen, läuft in einem Endlos-Jump-and-Run – mit Wetter,
+  Verfolgungsjagd, Musik und Sounds. Selbst spielen mit den Farbtasten.
+- Einheitliche **App-Symbol-Stile** (Original, Dunkel, Orange, Blau, Glas).
+- Läuft ab **Android 5** – getestet auf einem Sony BRAVIA KD-65XD7505 (Android TV 6/7).
+
+| Abend, Symbole „Dunkel“ | Regen im Spiel | Design „Glas“ |
 |---|---|---|
-| Bedienebene | Dock, Menüs | Glas: weichgezeichneter, leicht vergrößerter Hintergrund, Glanzlicht, helle Innen- und dunkle Außenkante |
-| Inhalt | Hintergrundbild, Uhr, Wetter, Kacheln in „Alle Apps“ | Kein Glas |
+| ![](app/src/test/snapshots/images/de.bettertv.launcher_PreviewTest_abendDunkel_abend_dunkel.png) | ![](app/src/test/snapshots/images/de.bettertv.launcher_PreviewTest_wetterRegen_regen.png) | ![](app/src/test/snapshots/images/de.bettertv.launcher_PreviewTest_home_home.png) |
 
-- Kein Glas auf Glas: Kacheln und Tasten im Dock sind Füllungen; die fokussierte Taste wird weiß.
-- Text auf Glas ist reinweiß; Akzentfarbe (Systemblau) nur für Hauptaktionen und den Punkt „im Dock“.
-- Konzentrische Ecken: Dock 30 dp − 12 dp Abstand = 18 dp Kacheln; Menü 28 − 16 = 12 dp.
+*Vorschaubilder mit Platzhaltern für App-Banner und Termine.*
 
-![Startansicht](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_home_home.png)
-![Alle Apps](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_allApps_apps.png)
+## Installieren
 
-*Vorschau mit Platzhaltern für Hintergrund und App-Banner.*
+1. **APK herunterladen:** unter [Releases](../../releases) die neueste `bettertv-X.Y.apk`.
+2. **Am Fernseher:** Entwickleroptionen einschalten (7× auf *Build* klicken – Sony:
+   *Einstellungen → Info → Build*, Google TV: *Einstellungen → System → Über → Android TV OS-Build*),
+   dann in den Entwickleroptionen **USB-Debugging** an.
+3. **Am Computer** [adb (Platform Tools)](https://developer.android.com/tools/releases/platform-tools)
+   herunterladen und im Ordner `platform-tools` ausführen:
 
-**Hinweis:** Echtes Liquid Glass (Lichtbrechung in Echtzeit) gibt es nur auf Apple-Geräten.
-Klar bildet es nach; die Unschärfe wird einmalig berechnet, damit es auch auf älteren
-Fernsehern flüssig bleibt.
+   ```bash
+   ./adb connect <IP-des-Fernsehers>        # am TV "Zulassen" bestätigen
+   ./adb install -r bettertv-X.Y.apk
+   ```
 
-## Design „Abend“ (Standard ab 3.0)
+4. **Home-Taste auf BetterTV legen** – mit dem Skript aus diesem Repo:
 
-Begrüßung je nach Tageszeit („Guten Abend. Was läuft heute?“), Uhr, Datum und Wetter in
-Pixel-Schrift, grauer Hintergrund mit Punkteraster (wie Dot-Grid-Papier), nummerierte Kacheln mit orangem Leuchten bei Fokus, „Weiter mit …“ für die
-zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die jeweilige Kachel.
-In der Mitte läuft **Pixel**, ein kleines Maskottchen (eigene Figur), in einem Endlos-Jump-and-Run:
-rennt über eine Pixel-Laufbahn, springt automatisch über Steine, Kisten und Blöcke, sammelt
-Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. Dazu **schwebende Plattformen**
-in zwei Höhen, Hügel und Wolken im Hintergrund (Parallax) und **Level**: alle 20 Sterne wird es etwas
-schneller. **Selbst spielen:** eine der **Farbtasten** (rot/grün/gelb/blau) oder **0** drücken – dann
-steuerst du (jeder Druck = Sprung), nach 20 s ohne Eingabe übernimmt Pixel wieder. Pixel **spricht**
-kurze Sprüche in Pixel-Schrift („Los geht's!“, „Autsch!“, „Level 3!“, „Viel Spaß!“) mit Plapper-Lauten.
-Die **Laufbahn baut sich auf und ab**: rechts fallen die Steine von oben an ihren Platz, links bröckeln
-sie weg. Dahinter ein **Pixel-Himmel** über die ganze Startansicht (`SkyLayer`): Wolken, Vogelschwärme,
-Flugzeuge mit Kondensstreifen, ein Heißluftballon, tagsüber eine Sonne, abends Mond, Sternschnuppen und
-Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps. Hinter Pixel fährt ein kleines
-**Pixel-Auto** (eigene Figur) her: drehende Räder, Rauch aus dem Auspuff, hüpft über Hindernisse, rückt
-näher, wenn Pixel stolpert – und erwischt ihn dann meistens: Pixel **kreischt**, **blinkt rot** und
-macht einen Schrei-Mund. Im Normalzustand **schaut Pixel immer wieder über die Schulter**, erschrickt
-(großer Blick, „!“, kleiner Hüpfer, manchmal „Es verfolgt mich!“) und sprintet kurz. Das Auto brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
-Was hinter Pixel von der Bahn bröckelt (Bahnsteine und Hindernisse), **fällt senkrecht herunter** auf
-die Höhe der Icons – auf die zweite App bzw. eine **kleine Pixel-Brücke** zwischen erster und zweiter App –
-und wird dort **im Tempo der Straße** nach links geschoben. Auf der ersten App steht **Schluck** (eigene Figur,
-lange Arme und Beine) mit einem **Staubsauger** und saugt die Teile ein; ab und zu isst er eins („Mampf!“).
-Je höher das Level, desto mehr kommt an und desto schneller saugt er; staut es sich, schwitzt er („ZU VIELE!“).
-Nachts (2–5 Uhr) schläft er.
-**App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
-Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
-der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
-**Musik & Sounds:** ein ruhiger, selbst erzeugter Lo-Fi-Loop und Retro-Effekte für Pixel (Sprung,
-Stern, Stolpern) – alles per `tools/make_audio.py` synthetisiert, keine fremden Aufnahmen. Läuft leise,
-nur solange die Startansicht sichtbar ist, nachts aus; abschaltbar unter *Einstellungen → Musik & Sounds*.
-**Wetter im Spiel** (wie draußen, oder fest unter *Einstellungen → Wetter im Spiel*): **Regen** –
-Pixel-Regen über den ganzen Bildschirm, Pixel mit Schirm, Pfützen, die spritzen; **Schnee** – Flocken und
-eine weiße Schicht auf Bahn und Hindernissen; **Sonne** – Pixel schwitzt, ein Wasserball hüpft über die
-App-Reihe. **Schluck wird satt:** mit jedem Stein wird sein Bauch runder, dann sagt er „SATT!“ und macht
-ein Nickerchen (der Stau wächst), bis Pixel „Aufwachen, Schluck!“ ruft.
-**Animationen** (*Einstellungen → Animationen*): Voll · Sparsam (Himmel steht still, Figuren mit
-~20 Bildern/s – schont ältere Fernseher) · Aus (Standbild, kein Motorgeräusch). „Einstellungen“ und
-„Alle Apps“ haben Symbole aus dunklem Glas mit orangem Zeichen und Leuchten.
-Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design* (Auswahlliste, aktives Design markiert).
+   ```bash
+   ./tools/tv-setup.sh auto home      # Original-Startseite deaktivieren (nicht löschen)
+   ./tools/tv-setup.sh auto restore   # alles wieder wie vorher
+   ```
 
-![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)
+   Die IP findet `python3 tools/find-tv.py` (oder am TV unter *Einstellungen → Netzwerk*).
+   Systemupdates können die Google-Startseite wieder aktivieren – dann `home` erneut ausführen.
 
-Schrift: Nunito ExtraBold, SIL Open Font License 1.1 (`app/src/main/assets/fonts/Nunito-OFL.txt`).
+Danach in BetterTV unter **Einstellungen (Zahnrad) → Wetter-Ort** deine Stadt eintragen.
 
-## Tagesübersicht „HEUTE“ (ab 5.5)
 
-Morgens von 5 bis 11 Uhr erscheint rechts unter der Uhr ein Feld mit dem Wetter für den
-ganzen Tag (Tiefst-/Höchstwert, Regenrisiko) und deinen Terminen von heute. Ganztägige
-Termine stehen oben, vergangene verschwinden, ab fünf Terminen steht „+ N weitere“ da.
-Einstellen unter ⚙︎ → **Tagesübersicht**: Morgens / Immer / Aus.
+<details><summary>Alle Befehle von <code>tools/tv-setup.sh</code></summary>
 
-**Google-Kalender verbinden:** Am Computer calendar.google.com → ⚙︎ Einstellungen → links den
-Kalender wählen → ganz unten **Privatadresse im iCal-Format** kopieren. Dann in der
-Handy-Fernbedienung auf ⚙︎ tippen und die Adresse unter „Google-Kalender“ einfügen.
-Die Adresse ist geheim und wird nur auf dem Fernseher gespeichert. Klar lädt den Kalender
-alle 15 Minuten neu, solange die Übersicht zu sehen ist. Jeder iCal-Kalender funktioniert,
-nicht nur Google (auch iCloud „Öffentlicher Kalender“ oder Outlook „ICS-Link“).
+```bash
+./tools/tv-setup.sh auto install            # BetterTV installieren (APK=/pfad/zur.apk)
+./tools/tv-setup.sh auto home               # Home-Taste -> BetterTV
+./tools/tv-setup.sh auto dns                # Werbeblocker-DNS (ab Android 9; sonst Anleitung)
+./tools/tv-setup.sh auto dns-off            # DNS wieder automatisch
+./tools/tv-setup.sh auto wallpaper bild.jpg # eigenes Hintergrundbild (Design "Glas")
+./tools/tv-setup.sh auto status             # Kontrolle
+./tools/tv-setup.sh auto restore            # Original-Startseite wieder an
+```
 
+Statt `auto` geht auch die IP-Adresse des Fernsehers.
+</details>
+
+## Bedienung
 
 | Wo | Taste | Funktion |
 |---|---|---|
-| Startansicht | ◀ ▶ | durch das Dock |
-| | OK | App öffnen |
-| | OK gedrückt halten | Vom Start entfernen · Nach links/rechts · Ausblenden · App-Info |
-| | Zurück | zur ersten App im Dock |
-| Alle Apps | OK gedrückt halten | Zum Start hinzufügen · Ausblenden · App-Info |
-| | Zurück | zur Startansicht |
+| Startansicht | ◀ ▶, OK | App wählen und öffnen |
+| | **1–9** | App an dieser Stelle starten |
+| | OK lange drücken | Verschieben · Vom Start entfernen · Ausblenden · App-Info |
+| | Farbtaste oder **0** | Selbst spielen (jeder Druck = Sprung) |
+| | Zurück | zur ersten App |
+| Alle Apps | OK lange drücken | Zum Start hinzufügen · Ausblenden · App-Info |
 | überall | Home | Startansicht |
 
-## Handy-Fernbedienung (Web-App)
+**Einstellungen** (Zahnrad am Ende der App-Reihe): Design (Abend / Glas), Animationen
+(Voll / Sparsam / Aus), Wetter im Spiel, Musik & Sounds, App-Symbole, Wetter-Ort,
+Tagesübersicht, Handy-Fernbedienung, ausgeblendete Apps.
 
-Klar bringt eine Fernbedienung fürs Handy mit – im Abend-Design (Grau mit Punkteraster, graue Tasten mit leuchtend oranger Umrandung), ohne App-Download.
+## Tagesübersicht „HEUTE“
 
-1. Am Handy (im selben WLAN) öffnen: `http://<IP-des-TVs>:8765`
-   (steht auch in Klar unter *Einstellungen → Handy-Fernbedienung*).
-2. **PIN anzeigen** antippen – die PIN erscheint auf dem Fernseher – und eingeben.
-3. Als App ablegen: iPhone: Safari → *Teilen → Zum Home-Bildschirm*. Android: Chrome → ⋮ → *Zum Startbildschirm hinzufügen*.
+Morgens von 5 bis 11 Uhr (oder immer, siehe *Einstellungen → Tagesübersicht*) steht unter der
+Uhr das Wetter für den ganzen Tag und deine Termine von heute.
 
-Bedienung: **Touchpad** wie bei der Siri Remote (wischen = bewegen, außen tippen = Pfeil,
-Mitte tippen = OK, außen halten = wiederholen), Zurück, Home, Play/Pause, Menü, Lautstärke,
-Stumm, Eingang, Aus, und **App-Kacheln** zum direkten Starten.
+**Kalender verbinden:** am Computer [calendar.google.com](https://calendar.google.com) → ⚙︎
+*Einstellungen* → links deinen Kalender wählen → *Kalender integrieren* →
+**Privatadresse im iCal-Format** kopieren. Dann in der Handy-Fernbedienung auf ⚙︎ tippen und
+die Adresse unter „Google-Kalender“ einfügen. Jeder andere iCal-Link (iCloud, Outlook, Nextcloud)
+geht auch.
 
-**Pfeile, OK, Zurück, Eingang und Aus** laufen über Sonys Netzwerksteuerung und brauchen einmalig:
-*TV-Einstellungen → Netzwerk → Heimnetzwerk-Setup → IP-Steuerung → Authentifizierung
-„Normal und Pre-Shared Key“* und einen selbst gewählten Code, den du in der Web-App unter ⚙︎
-einträgst. Ohne Code funktionieren App-Start, Home, Play/Pause und Lautstärke.
+> Die Privatadresse ist wie ein Passwort: wer sie hat, sieht deine Termine. Sie wird nur auf dem
+> Fernseher gespeichert. Falls sie in falsche Hände gerät, bei Google auf *Zurücksetzen* klicken.
 
-Sicherheit: nur im Heimnetz erreichbar; ohne PIN-Kopplung gibt es keinen Zugriff, nach 5 falschen
-PINs wird eine neue nötig. Gekoppelte Handys lassen sich in Klar unter *Einstellungen →
-Handy-Fernbedienung* trennen. Die Verbindung ist unverschlüsselt (HTTP) – für ein privates
-Heimnetz in Ordnung, nicht für offene WLANs.
+## Handy-Fernbedienung
 
-## Eigenes Hintergrundbild
+1. Am Handy im selben WLAN `http://<IP-des-TVs>:8765` öffnen (steht auch in BetterTV unter
+   *Einstellungen → Handy-Fernbedienung*).
+2. **PIN anzeigen** antippen, die PIN vom Fernseher eingeben.
+3. Als App ablegen: iPhone: Safari → *Teilen → Zum Home-Bildschirm*; Android: Chrome → ⋮ →
+   *Zum Startbildschirm hinzufügen*.
 
-JPG oder PNG, am besten 1920 × 1080. Andere Formate werden mittig zugeschnitten.
+Touchpad wie bei der Siri Remote, Zurück, Home, Play/Pause, Lautstärke, Eingang, Aus und
+App-Kacheln. **Pfeile, OK, Zurück, Eingang und Aus** laufen bei Sony über die Netzwerksteuerung:
+einmalig am TV *Einstellungen → Netzwerk → Heimnetzwerk-Setup → IP-Steuerung →
+Authentifizierung „Normal und Pre-Shared Key“* und den gewählten Code in der Web-App unter ⚙︎
+eintragen.
 
-```bash
-./tools/tv-setup.sh auto wallpaper ~/Downloads/bild.jpg
-# oder direkt mit adb:
-adb push bild.jpg /sdcard/Android/data/de.klar.tvlauncher/files/hintergrund.jpg
-```
+Nur im Heimnetz erreichbar, Zugriff nur nach PIN-Kopplung (nach 5 falschen PINs wird eine neue
+nötig). Die Verbindung ist unverschlüsselt (HTTP) – für ein privates Heimnetz gedacht, nicht für
+offene WLANs.
 
-Ohne eigenes Bild zeigt Klar einen dunklen Midnight-Verlauf.
+## Datenschutz
 
-Läuft ab Android 5, also auch auf dem **Sony BRAVIA KD-65XD7505** (Android TV 6/7)
-und auf neueren Google-TV-Geräten.
+BetterTV verbindet sich nur mit:
 
-- **Große App-Kacheln**, mit der Fernbedienung bedienbar (nutzt die 16:9-Banner der TV-Apps)
-- **Anheften & Ausblenden**: OK lange drücken oder Menü-Taste → *An den Anfang heften*,
-  *Nach vorne/hinten*, *Ausblenden*, *App-Info*
-- **Uhr, Datum & Wetter** (Open-Meteo: ohne Konto, ohne API-Schlüssel)
-- **Keine Werbung, keine Empfehlungen, kein Tracking.** Einzige Internetverbindung: das Wetter
-  (es wird nur der Ort übertragen). Einstellungen bleiben auf dem Gerät.
+- **Open-Meteo** (api.open-meteo.com) für das Wetter – übertragen werden nur die Koordinaten des
+  eingestellten Orts.
+- **deiner Kalender-Adresse**, wenn du eine einträgst.
 
-## 1. APK bekommen
+Keine Analyse, keine Werbung, kein Konto. Alle Einstellungen bleiben auf dem Fernseher.
 
-- Fertig gebaut: Im GitHub-Tab **Actions → „TV-Launcher bauen“** das Artefakt
-  `klar-launcher-apk` herunterladen, **oder**
-- selbst bauen (Android SDK nötig): `cd tv-launcher && ./gradlew assembleDebug`
-  → `app/build/outputs/apk/debug/app-debug.apk`
-
-## 2. Am TV vorbereiten
-
-1. Entwickleroptionen an: 7× auf **Build** klicken – Sony (Android 6/7): *Einstellungen → Info → Build*;
-   Google TV: *Einstellungen → System → Über → Android TV OS-Build*.
-2. In den *Entwickleroptionen* **USB-Debugging** einschalten (bei Sony ist ADB damit in der Regel auch übers Netzwerk erreichbar; `find-tv.py` zeigt es an).
-3. Die IP-Adresse findet `tools/find-tv.py` (siehe 3.) – oder am TV unter *Einstellungen → Netzwerk*.
-4. Am Computer [adb (Platform Tools)](https://developer.android.com/tools/releases/platform-tools) installieren.
-   Beim ersten Verbinden auf dem TV „Zulassen“ bestätigen.
-
-## 3. Fernseher im Netzwerk finden
-
-Auf einem Computer im **selben Netz** wie der TV (TV eingeschaltet):
-
-```bash
-python3 tools/find-tv.py
-```
-
-Das Skript fragt per UPnP/SSDP nach Geräten und erkennt Sony-TVs über deren
-eingebaute Schnittstelle; notfalls durchsucht es das Heimnetz (/24). Es zeigt IP,
-Modell und ob ADB erreichbar ist. In allen Befehlen unten kann statt der IP auch `auto` stehen.
-
-## 4. Einrichten (mit dem Skript)
-
-```bash
-./tools/tv-setup.sh auto install           # Klar installieren (TV wird automatisch gesucht)
-./tools/tv-setup.sh auto dns               # Werbeblocker-DNS (bei Android < 9: Anleitung)
-./tools/tv-setup.sh auto home              # Home-Taste -> Klar (Original-Startseite aus)
-./tools/tv-setup.sh auto status            # Kontrolle
-```
-
-Danach in Klar im Dock **Einstellungen (Zahnrad) → Wetter-Ort** setzen.
-
-**Alles rückgängig machen:**
-
-```bash
-./tools/tv-setup.sh auto restore           # Google-Startseite wieder an
-./tools/tv-setup.sh auto dns-off           # DNS wieder automatisch
-```
-
-### Warum „home“ nötig ist
-
-Google TV lässt die Home-Taste fest auf die eigene Startseite zeigen, auch wenn ein anderer
-Launcher installiert ist. Der Befehl deaktiviert (nicht löscht!) die Google-Startseite für den
-Nutzer – dann landet die Home-Taste bei Klar. Hinweise:
-
-- Systemupdates können die Google-Startseite wieder aktivieren → einfach `home` erneut ausführen.
-- Einige Google-TV-Funktionen hängen an der Original-Startseite (z. B. Profilwechsel,
-  Google-Assistant-Ergebnisseiten, Live-TV-Leiste mancher Hersteller). Sprachsuche in Apps
-  und alle Apps selbst funktionieren weiter.
-- Wenn etwas hakt: `restore` – danach ist alles wie vorher.
-
-**Ohne ADB / ohne Risiko:** Google TV hat den **„Nur-Apps-Modus“**
-(*Einstellungen → Konten & Anmeldung → dein Konto → Nur-Apps-Modus*). Er entfernt alle
-Empfehlungen und Werbeflächen aus der Original-Startseite – deutlich ruhiger, aber nicht so
-schlicht wie Klar.
-
-### Sony BRAVIA (Android 6/7, z. B. KD-65XD7505)
-
-- „Privates DNS“ gibt es erst ab Android 9. `dns` erkennt das und zeigt stattdessen, wie
-  du AdGuard-DNS (`94.140.14.14` / `94.140.15.15`) am TV (statische IP-Einstellungen) oder –
-  besser für alle Geräte – im Router einträgst.
-- Die Original-Startseite heißt hier `com.google.android.leanbacklauncher`; `home` deaktiviert
-  sie, die Home-Taste führt dann zu Klar. Sony-Menüs (Action-Menü, Eingänge, Bild) bleiben.
-- Am TV zusätzlich abschalten, falls vorhanden: *Samba Interactive TV* (Inhaltserkennung)
-  und Sony-Empfehlungen/Datenschutz-Optionen in den Einstellungen.
-- Der TV ist von 2016 und eher langsam: Unschärfe wird deshalb nur einmal berechnet, nicht
-  pro Bild, und Animationen bleiben kurz.
-
-## 5. Werbung & Tracking im Netz
+## Werbung im restlichen System
 
 | Maßnahme | Wo | Effekt |
 |---|---|---|
-| Privates DNS `dns.adguard-dns.com` | Skript `dns` | Blockt Werbe- und Tracking-Server systemweit (Banner in Apps, Telemetrie). |
-| Werbe-ID löschen | *Einstellungen → Datenschutz → Werbung → Werbe-ID löschen* | Keine personalisierte Werbung über die ID. |
-| Nutzungs-/Diagnosedaten aus | *Einstellungen → Datenschutz → Nutzung & Diagnose* | Weniger Daten an Google. |
-| Hersteller-Tracking aus | je nach Marke: „Viewing Information“, „Smart-TV-Erfahrung“, „ACR“, „Inhaltserkennung“ (Philips, TCL, Hisense, Sony) | Stoppt die Auswertung, was du schaust. |
+| Privates DNS `dns.adguard-dns.com` | `tools/tv-setup.sh auto dns` (ab Android 9) | Blockt Werbe- und Tracking-Server systemweit |
+| Werbe-ID löschen | *Einstellungen → Datenschutz → Werbung* | Keine personalisierte Werbung |
+| Hersteller-Tracking aus | „Viewing Information“, „ACR“, „Inhaltserkennung“, Samba TV | Stoppt die Auswertung, was du schaust |
 
-Statt AdGuard geht jeder DNS-over-TLS-Anbieter, z. B. `dns.mullvad.net` (Mullvad mit Werbeblocker:
-`adblock.dns.mullvad.net`) oder ein eigener Pi-hole/AdGuard Home mit DoT:
-`./tools/tv-setup.sh <IP> dns adblock.dns.mullvad.net`.
+Ehrlich gesagt: DNS-Blocker entfernen **keine YouTube-Werbung** und keine Werbung, die
+Streamingdienste in ihre Abos einbauen.
 
-**Ehrlich gesagt:** DNS-Blocker entfernen **keine YouTube-Werbung** (Werbung und Videos kommen
-von denselben Servern) und keine Werbung, die Streamingdienste in ihre Abos einbauen.
-Dafür braucht es YouTube Premium bzw. ein werbefreies Abo.
+## Selbst bauen
 
-## Entwicklung
+Android SDK und JDK 17 nötig.
 
 ```bash
-cd tv-launcher
-./gradlew testDebugUnitTest   # Unit-Tests (Sortierung, Wetter-Texte)
-./gradlew recordPaparazziDebug # Vorschaubild der Startseite neu rendern
-./gradlew assembleDebug
+./gradlew testDebugUnitTest      # Unit-Tests
+./gradlew lintDebug              # Lint
+./gradlew recordPaparazziDebug   # Vorschaubilder neu rendern
+./gradlew assembleDebug          # -> app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Aufbau: `MainActivity` (Startansicht mit Dock & Einstellungen), `AppLoader` (installierte Apps), `AppOrder`
-(Sortierlogik, getestet), `Weather` (Open-Meteo), `Prefs` (lokale Einstellungen),
-`AppsActivity` („Alle Apps“), `AppMenu` (gemeinsame App-Aktionen), `Favorites` (Standard-Dock, getestet),
-`Wallpaper` (Hintergrundbild), `Sheet` (Glas-Menüs), `GlassLayout` (Glas-Material),
-`Aurora` (Ersatz-Hintergrund + Weichzeichner), `Tint` (App-Farbe für Kacheln).
-Fernbedienung: `remote/RemoteHttp` (Server, getestet), `remote/SonyIrcc` (Sony-Tasten),
-`remote/AndroidBackend`, `remote/RemoteService`; Web-App in `app/src/main/assets/remote/`.
+Klänge und Musik sind selbst erzeugt: `python3 tools/make_audio.py` schreibt sie nach
+`app/src/main/res/raw/`.
+
+<details><summary>Aufbau des Codes</summary>
+
+- `MainActivity` – Startansicht, Einstellungen, Wetter, Tagesübersicht
+- `Mascot`, `HelperLayer`, `SkyLayer` – Jump-and-Run, Schluck und Pixel-Himmel
+- `AppLoader`, `AppOrder`, `Favorites`, `TileAdapter`, `IconStyle` – Apps, Reihenfolge, Symbol-Stile
+- `CalendarIcs`, `DayPanel` – iCal-Kalender (mit Serienterminen) und „HEUTE“-Feld
+- `Weather` – Open-Meteo, `Prefs` – lokale Einstellungen
+- `remote/RemoteHttp` (HTTP-Server mit PIN-Kopplung), `remote/SonyIrcc` (Sony-Tasten),
+  `remote/AndroidBackend`, `remote/RemoteService`; Web-App in `app/src/main/assets/remote/`
+</details>
+
+## Veröffentlichen (für Betreuer)
+
+Releases werden automatisch gebaut, wenn ein Tag `v*` gepusht wird
+(`.github/workflows/release.yml`). Vorher `versionCode` und `versionName` in
+`app/build.gradle` erhöhen. Die APK wird mit dem Release-Schlüssel aus den Repository-Secrets
+signiert: `BETTERTV_KEYSTORE_BASE64`, `BETTERTV_KEYSTORE_PASSWORD`, `BETTERTV_KEY_ALIAS`,
+`BETTERTV_KEY_PASSWORD`. Den Schlüssel nie verlieren – ohne ihn lassen sich Updates nicht mehr
+über eine installierte Version spielen.
+
+## Lizenz und Hinweise
+
+[MIT](LICENSE). Schrift Nunito: SIL Open Font License 1.1. Alle Figuren, Grafiken und Klänge sind
+eigene Werke.
+
+BetterTV ist ein unabhängiges Projekt und steht in keiner Verbindung zu Google, Sony, Netflix
+oder anderen genannten Marken.

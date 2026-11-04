@@ -16,7 +16,7 @@
         android:scaleType="fitXY" />
 
     <!-- Pixel-Himmel: Wolken, Vögel, Flugzeuge … hinter allem anderen -->
-    <de.klar.tvlauncher.SkyLayer
+    <de.bettertv.launcher.SkyLayer
         android:id="@+id/sky"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -116,7 +116,7 @@
                 android:gravity="end"
                 android:orientation="vertical">
 
-                <de.klar.tvlauncher.PixelText
+                <de.bettertv.launcher.PixelText
                     android:id="@+id/pixel_clock"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -124,7 +124,7 @@
                     app:pixelColor="#FFFFFF"
                     app:pixelSize="7.5dp" />
 
-                <de.klar.tvlauncher.PixelText
+                <de.bettertv.launcher.PixelText
                     android:id="@+id/pixel_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -132,7 +132,7 @@
                     app:pixelColor="#8FB4FF"
                     app:pixelSize="2.4dp" />
 
-                <de.klar.tvlauncher.PixelText
+                <de.bettertv.launcher.PixelText
                     android:id="@+id/pixel_weather"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -149,7 +149,7 @@
             android:layout_weight="1"
             android:clipChildren="false">
 
-            <de.klar.tvlauncher.Mascot
+            <de.bettertv.launcher.Mascot
                 android:id="@+id/mascot"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -232,7 +232,7 @@
     </LinearLayout>
 
     <!-- Über allem: fallende Steine und "Schluck", der sie auf der ersten App einsaugt -->
-    <de.klar.tvlauncher.HelperLayer
+    <de.bettertv.launcher.HelperLayer
         android:id="@+id/helper"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

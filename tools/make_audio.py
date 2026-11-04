@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Erzeugt die Klänge für Klar komplett selbst (keine fremden Aufnahmen, keine Samples).
+"""Erzeugt die Klänge für BetterTV komplett selbst (keine fremden Aufnahmen, keine Samples).
 
   - lofi_loop.wav : entspannter Lo-Fi-Loop, 8 Takte, ~76 BPM, nahtlos wiederholbar
   - sfx_jump.wav, sfx_star.wav, sfx_bump.wav : kurze Retro-Effekte für das Jump and Run

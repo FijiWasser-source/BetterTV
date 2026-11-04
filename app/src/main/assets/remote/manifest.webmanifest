@@ -1,6 +1,6 @@
 {
-  "name": "Klar Fernbedienung",
-  "short_name": "Klar",
+  "name": "BetterTV Fernbedienung",
+  "short_name": "BetterTV",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
