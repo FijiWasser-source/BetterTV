@@ -82,11 +82,12 @@ final class AndroidBackend implements RemoteHttp.Backend {
 
     @Override public synchronized byte[] icon(String pkg) {
         if (pkg == null) return null;
-        if (iconCache.containsKey(pkg)) return iconCache.get(pkg);
+        String cacheKey = pkg + "|" + KlarAccess.iconStyle(context);
+        if (iconCache.containsKey(cacheKey)) return iconCache.get(cacheKey);
         byte[] png = null;
         for (AppEntry e : KlarAccess.apps(context)) {
             if (!pkg.equals(e.packageName())) continue;
-            Drawable d = e.hasBanner() ? e.bannerDrawable() : e.iconDrawable();
+            Drawable d = KlarAccess.styled(context, e.hasBanner() ? e.bannerDrawable() : e.iconDrawable());
             if (d == null) break;
             int w = e.hasBanner() ? 320 : 192, h = e.hasBanner() ? 180 : 192;
             Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -99,7 +100,7 @@ final class AndroidBackend implements RemoteHttp.Backend {
             png = out.toByteArray();
             break;
         }
-        iconCache.put(pkg, png);
+        iconCache.put(cacheKey, png);
         return png;
     }
 

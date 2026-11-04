@@ -35,6 +35,13 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private final Map<String, Integer> colors = new HashMap<>();
     private final DecelerateInterpolator ease = new DecelerateInterpolator(2f);
     private List<AppEntry> items = new ArrayList<>();
+    private String iconStyle = IconStyle.ORIGINAL;
+
+    void setIconStyle(String style) {
+        if (style.equals(iconStyle)) return;
+        iconStyle = style;
+        notifyDataSetChanged();
+    }
     private float density = 1f;
 
     /** Raster ("Alle Apps"): feste Kacheln der Inhaltsebene. */
@@ -106,14 +113,16 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
 
         if (e.banner != null) {
             // Im Design "Abend" runde Ecken direkt im Bild – bleibt auch bei Fokus (Software-Zeichnung) rund
-            h.banner.setImageDrawable(abend ? new RoundedDrawable(e.banner, 10 * density) : e.banner);
+            h.banner.setImageDrawable(abend ? new RoundedDrawable(e.banner, 10 * density, iconStyle) : e.banner);
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.card.setBackgroundTintList(null);
         } else {
             h.banner.setVisibility(View.GONE);
             h.icon.setVisibility(View.VISIBLE);
-            h.icon.setImageDrawable(e.icon);
+            // App-Symbole (nicht "Alle Apps"/"Einstellungen") im gewählten Stil
+            boolean styled = abend && e.launchIntent != null && !IconStyle.ORIGINAL.equals(iconStyle);
+            h.icon.setImageDrawable(styled ? new RoundedDrawable(e.icon, 10 * density, iconStyle) : e.icon);
             // Inhaltsebene: ruhige Fläche im Farbschema, nur leicht in Richtung App-Farbe
             if (tintIconTiles) {
                 h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));

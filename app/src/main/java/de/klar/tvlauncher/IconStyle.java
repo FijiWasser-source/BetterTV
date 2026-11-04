@@ -1,0 +1,80 @@
+package de.klar.tvlauncher;
+
+/**
+ * Einheitliche App-Symbole (nur innerhalb von Klar): Logo hell bzw. in einer Tönung auf
+ * dunklem Grund. Funktioniert ohne Android-Klassen (reine Pixel-Arrays), damit testbar.
+ */
+final class IconStyle {
+    private IconStyle() {}
+
+    static final String ORIGINAL = "original", DARK = "dunkel", ORANGE = "orange", BLUE = "blau";
+    static final String[] ALL = {ORIGINAL, DARK, ORANGE, BLUE};
+
+    static String label(String style) {
+        switch (style) {
+            case DARK: return "Dunkel";
+            case ORANGE: return "Orange getönt";
+            case BLUE: return "Blau getönt";
+            default: return "Original";
+        }
+    }
+
+    static String next(String style) {
+        for (int i = 0; i < ALL.length; i++) if (ALL[i].equals(style)) return ALL[(i + 1) % ALL.length];
+        return ALL[0];
+    }
+
+    private static final int BG = 0x1C1E22;
+
+    private static int fg(String style) {
+        switch (style) {
+            case ORANGE: return 0xFF8A1F;
+            case BLUE: return 0x8FB4FF;
+            default: return 0xF2F2F2;
+        }
+    }
+
+    /**
+     * Färbt die Pixel (ARGB, zeilenweise, Breite {@code width}) direkt um.
+     * Ob der Hintergrund hell ist, entscheidet der Bildrand – dort liegt fast immer der Grund,
+     * nicht das Logo. Bei ORIGINAL passiert nichts.
+     */
+    static void apply(int[] px, int width, String style) {
+        if (ORIGINAL.equals(style) || px.length == 0 || width <= 0) return;
+        int height = px.length / width;
+        float[] lum = new float[px.length];
+        for (int i = 0; i < px.length; i++) {
+            int c = px[i];
+            lum[i] = (0.2126f * ((c >> 16) & 0xFF) + 0.7152f * ((c >> 8) & 0xFF) + 0.0722f * (c & 0xFF)) / 255f;
+        }
+        // 1. Helligkeit des Randes (oben, unten, links, rechts; nur sichtbare Pixel)
+        double sum = 0; int n = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                boolean edge = y == 0 || y == height - 1 || x == 0 || x == width - 1;
+                int i = y * width + x;
+                if (edge && (px[i] >>> 24) > 128) { sum += lum[i]; n++; }
+            }
+        }
+        boolean brightBackground = n > 0 && sum / n > 0.5;
+        // 2. Heller Hintergrund (z. B. weißes Banner) -> umdrehen, damit das Logo hell wird
+        float lo = 1, hi = 0;
+        for (int i = 0; i < lum.length; i++) {
+            if (brightBackground) lum[i] = 1 - lum[i];
+            if ((px[i] >>> 24) > 128) { lo = Math.min(lo, lum[i]); hi = Math.max(hi, lum[i]); }
+        }
+        float range = Math.max(0.15f, hi - lo);
+        // 3. Auf Verlauf dunkler Grund -> Tönung abbilden (Kontrast gestreckt)
+        int f = fg(style);
+        for (int i = 0; i < px.length; i++) {
+            float t = Math.max(0, Math.min(1, (lum[i] - lo) / range));
+            t = t * t * (3 - 2 * t); // weiche Kurve: Grund bleibt ruhig, Logo klar
+            int r = mix((BG >> 16) & 0xFF, (f >> 16) & 0xFF, t);
+            int g = mix((BG >> 8) & 0xFF, (f >> 8) & 0xFF, t);
+            int b = mix(BG & 0xFF, f & 0xFF, t);
+            px[i] = (px[i] & 0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+
+    private static int mix(int a, int b, float t) { return Math.round(a + (b - a) * t); }
+}

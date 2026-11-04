@@ -39,15 +39,21 @@ public class PreviewTest {
 
     /** Platzhalter-Banner: Farbverlauf mit App-Namen (echte Apps liefern ihr eigenes Banner). */
     static final class FakeBanner extends Drawable {
-        private final String name; private final int color;
+        private final String name; private final int color; private final boolean white;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        FakeBanner(String name, int color) { this.name = name; this.color = color; }
+        FakeBanner(String name, int color) { this(name, color, false); }
+        FakeBanner(String name, int color, boolean white) { this.name = name; this.color = color; this.white = white; }
+        @Override public int getIntrinsicWidth() { return 320; }
+        @Override public int getIntrinsicHeight() { return 180; }
         @Override public void draw(Canvas c) {
             float w = getBounds().width(), h = getBounds().height();
-            paint.setShader(new LinearGradient(0, 0, w, h, color, Tint.darken(color, 0.4f), Shader.TileMode.CLAMP));
-            c.drawRect(getBounds(), paint);
-            paint.setShader(null);
-            paint.setColor(Color.WHITE);
+            if (white) { paint.setColor(0xFFF7F7F7); c.drawRect(getBounds(), paint); }
+            else {
+                paint.setShader(new LinearGradient(0, 0, w, h, color, Tint.darken(color, 0.4f), Shader.TileMode.CLAMP));
+                c.drawRect(getBounds(), paint);
+                paint.setShader(null);
+            }
+            paint.setColor(white ? color : Color.WHITE);
             paint.setTextAlign(Paint.Align.CENTER);
             paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
             paint.setTextSize(h * 0.2f);
@@ -209,17 +215,24 @@ public class PreviewTest {
         paparazzi.snapshot(stack, "menu");
     }
 
-    @Test
-    public void abend() {
+    @Test public void abend() { snapshotAbend(IconStyle.ORIGINAL, "abend"); }
+    @Test public void abendDunkel() { snapshotAbend(IconStyle.DARK, "abend_dunkel"); }
+    @Test public void abendOrange() { snapshotAbend(IconStyle.ORANGE, "abend_orange"); }
+
+    private void snapshotAbend(String style, String name) {
         View root = paparazzi.inflate(R.layout.activity_main_abend);
         RecyclerView dock = root.findViewById(R.id.dock_list);
         dock.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(
                 paparazzi.getContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false));
         TileAdapter adapter = new TileAdapter(NOOP, R.layout.item_tile_abend, 1.06f, false, true);
+        adapter.setIconStyle(style);
         dock.setAdapter(adapter);
         List<AppEntry> list = new ArrayList<>();
+        int[] logo = {0xFFE50914, 0xFFFF0000, 0xFF00A8E1, 0xFF01875F, 0xFFFF5A1F, 0xFF5A2DA8, 0xFF113CCF};
         for (int i = 0; i < NAMES.length; i++) {
-            list.add(new AppEntry("p" + i, NAMES[i], "p" + i, new FakeBanner(NAMES[i], COLORS[i]), null,
+            boolean white = i == 0 || i == 1 || i == 3; // wie die echten Banner von Netflix, YouTube, Play Store
+            list.add(new AppEntry("p" + i, NAMES[i], "p" + i,
+                    white ? new FakeBanner(NAMES[i], logo[i], true) : new FakeBanner(NAMES[i], COLORS[i]), null,
                     new android.content.Intent(), true));
         }
         list.add(new AppEntry("klar:all", "Alle Apps", "", null,
@@ -249,7 +262,7 @@ public class PreviewTest {
         card.setScaleX(1.06f); card.setScaleY(1.06f);
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
         ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
-        paparazzi.snapshot(root, "abend");
+        paparazzi.snapshot(root, name);
     }
 
     @Test

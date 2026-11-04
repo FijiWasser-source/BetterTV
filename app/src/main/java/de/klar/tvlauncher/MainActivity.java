@@ -121,6 +121,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             }
         });
         adapter = new TileAdapter(this, R.layout.item_tile_abend, 1.06f, false, true);
+        adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
     }
 
@@ -292,6 +293,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)") + " – wechseln", () -> {
                     prefs.setDesign(abend ? "glas" : "abend");
                     recreate();
+                })
+                .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()) + " – wechseln", () -> {
+                    prefs.setIconStyle(IconStyle.next(prefs.iconStyle()));
+                    if (abend) adapter.setIconStyle(prefs.iconStyle());
+                    Toast.makeText(this, "App-Symbole: " + IconStyle.label(prefs.iconStyle()), Toast.LENGTH_SHORT).show();
                 })
                 .button("Wetter-Ort: " + city, this::askCity)
                 .button("Handy-Fernbedienung", this::showRemoteInfo)

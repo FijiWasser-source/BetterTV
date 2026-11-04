@@ -21,8 +21,12 @@ final class RoundedDrawable extends Drawable {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF rect = new RectF();
     private Bitmap cache;
+    private final String style;
 
-    RoundedDrawable(Drawable source, float radius) {
+    RoundedDrawable(Drawable source, float radius) { this(source, radius, IconStyle.ORIGINAL); }
+
+    RoundedDrawable(Drawable source, float radius, String style) {
+        this.style = style;
         this.source = source.getConstantState() != null ? source.getConstantState().newDrawable().mutate() : source;
         this.radius = radius;
     }
@@ -33,6 +37,13 @@ final class RoundedDrawable extends Drawable {
         cache = Bitmap.createBitmap(b.width(), b.height(), Bitmap.Config.ARGB_8888);
         source.setBounds(0, 0, b.width(), b.height());
         source.draw(new Canvas(cache));
+        if (!IconStyle.ORIGINAL.equals(style)) {
+            int w = cache.getWidth(), h = cache.getHeight();
+            int[] px = new int[w * h];
+            cache.getPixels(px, 0, w, 0, 0, w, h);
+            IconStyle.apply(px, w, style);
+            cache.setPixels(px, 0, w, 0, 0, w, h);
+        }
         BitmapShader shader = new BitmapShader(cache, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
         android.graphics.Matrix m = new android.graphics.Matrix();
         m.setTranslate(b.left, b.top);

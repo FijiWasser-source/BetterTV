@@ -26,4 +26,13 @@ public final class KlarAccess {
     public static void noteLaunched(Context c, String pkg) {
         new Prefs(c).setLastLaunched(pkg);
     }
+
+    /** Gewählter Stil der App-Symbole (für die Handy-Fernbedienung). */
+    public static String iconStyle(Context c) { return new Prefs(c).iconStyle(); }
+
+    /** Bild im gewählten Symbol-Stil (ohne Rundung), z. B. für die Handy-Fernbedienung. */
+    public static android.graphics.drawable.Drawable styled(Context c, android.graphics.drawable.Drawable d) {
+        String st = iconStyle(c);
+        return IconStyle.ORIGINAL.equals(st) || d == null ? d : new RoundedDrawable(d, 0, st);
+    }
 }

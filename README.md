@@ -33,6 +33,9 @@ zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die je
 In der Mitte läuft **Pixel**, ein kleines Maskottchen (eigene Figur), in einem Endlos-Jump-and-Run:
 rennt über eine Pixel-Laufbahn, springt automatisch über Steine, Kisten und Blöcke, sammelt
 Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. **Taste 0** lässt ihn springen.
+**App-Symbole** lassen sich einheitlich darstellen (*Einstellungen → App-Symbole*): Original,
+Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt – nur innerhalb von Klar und
+der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
 Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
 
 ![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)

@@ -68,6 +68,10 @@ final class Prefs {
 
     void setLastLaunched(String pkg) { sp.edit().putString("last_launched", pkg).apply(); }
 
+    String iconStyle() { return sp.getString("icon_style", IconStyle.ORIGINAL); }
+
+    void setIconStyle(String s) { sp.edit().putString("icon_style", s).apply(); }
+
     String city() { return sp.getString(CITY, ""); }
 
     boolean hasLocation() { return sp.contains(LAT) && sp.contains(LON); }
