@@ -25,6 +25,7 @@ public class AppsActivity extends Activity implements TileAdapter.Listener {
         grid.setLayoutManager(new GridLayoutManager(this, 5));
         grid.setItemAnimator(null);
         adapter = new TileAdapter(this);
+        adapter.setIconStyle(prefs.iconStyle());
         grid.setAdapter(adapter);
 
         View root = findViewById(R.id.root);

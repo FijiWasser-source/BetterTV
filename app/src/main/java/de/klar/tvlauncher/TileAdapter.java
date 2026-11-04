@@ -113,7 +113,9 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
 
         if (e.banner != null) {
             // Im Design "Abend" runde Ecken direkt im Bild – bleibt auch bei Fokus (Software-Zeichnung) rund
-            h.banner.setImageDrawable(abend ? new RoundedDrawable(e.banner, 10 * density, iconStyle) : e.banner);
+            // Runde Ecken im Design "Abend"; Symbol-Stil gilt überall in Klar
+            boolean styleBanner = abend || !IconStyle.ORIGINAL.equals(iconStyle);
+            h.banner.setImageDrawable(styleBanner ? new RoundedDrawable(e.banner, abend ? 10 * density : 0, iconStyle) : e.banner);
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.card.setBackgroundTintList(null);
@@ -121,8 +123,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             h.banner.setVisibility(View.GONE);
             h.icon.setVisibility(View.VISIBLE);
             // App-Symbole (nicht "Alle Apps"/"Einstellungen") im gewählten Stil
-            boolean styled = abend && e.launchIntent != null && !IconStyle.ORIGINAL.equals(iconStyle);
-            h.icon.setImageDrawable(styled ? new RoundedDrawable(e.icon, 10 * density, iconStyle) : e.icon);
+            boolean styled = e.launchIntent != null && !IconStyle.ORIGINAL.equals(iconStyle);
+            h.icon.setImageDrawable(styled ? new RoundedDrawable(e.icon, abend ? 10 * density : 0, iconStyle) : e.icon);
             // Inhaltsebene: ruhige Fläche im Farbschema, nur leicht in Richtung App-Farbe
             if (tintIconTiles) {
                 h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));

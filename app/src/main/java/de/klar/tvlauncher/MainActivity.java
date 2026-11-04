@@ -99,6 +99,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         allApps.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.all_apps); });
         settings.setOnFocusChangeListener((v, f) -> { if (f) dockLabel.setText(R.string.settings); });
         adapter = new TileAdapter(this, R.layout.item_dock, 1.15f, false);
+        adapter.setIconStyle(prefs.iconStyle());
         dockList.setAdapter(adapter);
     }
 
@@ -296,7 +297,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 })
                 .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()) + " – wechseln", () -> {
                     prefs.setIconStyle(IconStyle.next(prefs.iconStyle()));
-                    if (abend) adapter.setIconStyle(prefs.iconStyle());
+                    adapter.setIconStyle(prefs.iconStyle());
                     Toast.makeText(this, "App-Symbole: " + IconStyle.label(prefs.iconStyle()), Toast.LENGTH_SHORT).show();
                 })
                 .button("Wetter-Ort: " + city, this::askCity)

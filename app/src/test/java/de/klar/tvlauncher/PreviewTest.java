@@ -159,12 +159,15 @@ public class PreviewTest {
         paparazzi.snapshot(buildHome(), "home");
     }
 
-    @Test
-    public void allApps() {
+    @Test public void allApps() { snapshotAllApps(IconStyle.ORIGINAL, "apps"); }
+    @Test public void allAppsDunkel() { snapshotAllApps(IconStyle.DARK, "apps_dunkel"); }
+
+    private void snapshotAllApps(String style, String name) {
         View root = paparazzi.inflate(R.layout.activity_apps);
         RecyclerView grid = root.findViewById(R.id.grid);
         grid.setLayoutManager(new GridLayoutManager(paparazzi.getContext(), 5));
         TileAdapter adapter = new TileAdapter(NOOP);
+        adapter.setIconStyle(style);
         grid.setAdapter(adapter);
         adapter.submit(apps(true));
         layout(root);
@@ -177,7 +180,7 @@ public class PreviewTest {
         tile.findViewById(R.id.label).setAlpha(1f);
         tile.findViewById(R.id.label).setTranslationY(8f);
         tile.findViewById(R.id.sheen).setAlpha(1f);
-        paparazzi.snapshot(root, "apps");
+        paparazzi.snapshot(root, name);
     }
 
     @Test
