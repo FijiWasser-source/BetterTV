@@ -4,9 +4,6 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 
 final class AppEntry {
-    /** Spezialschlüssel für die Einstellungs-Kachel am Ende des Rasters. */
-    static final String SETTINGS_KEY = "klar:settings";
-
     final String key;
     final String label;
     final String packageName;
@@ -25,6 +22,4 @@ final class AppEntry {
         this.launchIntent = launchIntent;
         this.pinned = pinned;
     }
-
-    boolean isSettings() { return SETTINGS_KEY.equals(key); }
 }

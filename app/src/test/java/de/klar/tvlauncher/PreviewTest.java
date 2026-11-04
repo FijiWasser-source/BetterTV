@@ -58,43 +58,84 @@ public class PreviewTest {
         @Override public int getOpacity() { return PixelFormat.OPAQUE; }
     }
 
-    @Test
-    public void home() {
+    private View buildHome() {
         View root = paparazzi.inflate(R.layout.activity_main);
         String[] names = {"Netflix", "YouTube", "ARD", "ZDF", "Spotify", "Disney+", "Prime Video",
-                "Arte", "Plex", "Joyn", "RTL+", "Kodi", "Fotos", "Musik"};
+                "Arte", "Plex", "Joyn", "RTL+", "Kodi", "Fotos", "Musik", "Sky"};
         int[] colors = {0xFF8E1B1B, 0xFF5E1717, 0xFF1F3F7A, 0xFFB8551C, 0xFF1C6B3A, 0xFF14306B,
-                0xFF1C4E80, 0xFF3A3A3A, 0xFF6B5418, 0xFF5B2C83, 0xFF7A1E3A, 0xFF1E5C7A, 0xFF4A4A4A, 0xFF7A2E5C};
+                0xFF1C4E80, 0xFF3A3A3A, 0xFF6B5418, 0xFF5B2C83, 0xFF7A1E3A, 0xFF1E5C7A, 0xFF4A4A4A,
+                0xFF7A2E5C, 0xFF20304F};
         List<AppEntry> list = new ArrayList<>();
         for (int i = 0; i < names.length; i++) {
             list.add(new AppEntry("p" + i, names[i], "p" + i, new FakeBanner(names[i], colors[i]), null, null, i < 3));
         }
-        list.add(new AppEntry(AppEntry.SETTINGS_KEY, "Einstellungen", null, null,
-                paparazzi.getContext().getDrawable(R.drawable.ic_settings), null, false));
-
         RecyclerView grid = root.findViewById(R.id.grid);
         grid.setLayoutManager(new GridLayoutManager(paparazzi.getContext(), 5));
         TileAdapter adapter = new TileAdapter(new TileAdapter.Listener() {
             public void onOpen(AppEntry e) {}
             public void onMenu(AppEntry e) {}
-            public void onFocus(AppEntry e, int c) {}
         });
         grid.setAdapter(adapter);
         adapter.submit(list);
         ((TextView) root.findViewById(R.id.weather_temp)).setText("12°");
         ((TextView) root.findViewById(R.id.weather_text)).setText("Teilweise bewölkt · Hamburg");
-        root.findViewById(R.id.ambient).setBackgroundColor(Tint.darken(colors[0], 0.45f));
 
+        layout(root);
+        Chrome.install(root, (GlassLayout) root.findViewById(R.id.glass_bar));
         // Fokus auf "Netflix" simulieren (auf dem TV übernimmt das die Fernbedienung)
-        root.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY));
-        root.layout(0, 0, 1920, 1080);
         View tile = grid.getChildAt(0);
         View card = tile.findViewById(R.id.card);
         card.setScaleX(1.12f); card.setScaleY(1.12f); card.setTranslationZ(44f);
         tile.findViewById(R.id.label).setAlpha(1f);
         tile.findViewById(R.id.label).setTranslationY(8f);
         tile.findViewById(R.id.sheen).setAlpha(1f);
-        paparazzi.snapshot(root, "home");
+        return root;
+    }
+
+    private static void layout(View v) {
+        v.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY));
+        v.layout(0, 0, 1920, 1080);
+    }
+
+    @Test
+    public void home() {
+        paparazzi.snapshot(buildHome(), "home");
+    }
+
+    @Test
+    public void menu() {
+        View homeView = buildHome();
+        android.graphics.Bitmap backdrop = Aurora.snapshot(homeView);
+
+        android.widget.FrameLayout stack = new android.widget.FrameLayout(paparazzi.getContext());
+        stack.addView(homeView);
+        View dim = new View(paparazzi.getContext());
+        dim.setBackgroundColor(0x66000000);
+        stack.addView(dim);
+
+        android.view.LayoutInflater inf = android.view.LayoutInflater.from(paparazzi.getContext());
+        GlassLayout sheet = (GlassLayout) inf.inflate(R.layout.sheet, stack, false);
+        ((TextView) sheet.findViewById(R.id.sheet_title)).setText("Netflix");
+        android.widget.LinearLayout buttons = sheet.findViewById(R.id.sheet_buttons);
+        String[] labels = {"Lösen", "Nach vorne", "Nach hinten", "Ausblenden", "Abbrechen"};
+        for (int i = 0; i < labels.length; i++) {
+            TextView b = (TextView) inf.inflate(R.layout.sheet_button, buttons, false);
+            b.setText(labels[i]);
+            buttons.addView(b);
+        }
+        android.widget.FrameLayout.LayoutParams lp = (android.widget.FrameLayout.LayoutParams) sheet.getLayoutParams();
+        lp.gravity = android.view.Gravity.CENTER;
+        stack.addView(sheet, lp);
+        layout(stack);
+        // Fokuszustand der ersten Schaltfläche (weiß) nachstellen
+        TextView first = (TextView) buttons.getChildAt(0);
+        android.graphics.drawable.GradientDrawable focused = new android.graphics.drawable.GradientDrawable();
+        focused.setColor(0xFFFFFFFF);
+        focused.setCornerRadius(12 * paparazzi.getContext().getResources().getDisplayMetrics().density);
+        first.setBackground(focused);
+        first.setTextColor(0xFF000000);
+        sheet.setBackdrop(backdrop, Aurora.BLUR_DOWNSCALE);
+        paparazzi.snapshot(stack, "menu");
     }
 }

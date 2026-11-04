@@ -40,4 +40,12 @@ final class Tint {
         float k = 1f - amount;
         return Color.rgb((int) (Color.red(color) * k), (int) (Color.green(color) * k), (int) (Color.blue(color) * k));
     }
+
+    /** Mischt {@code b} zu Anteil {@code t} in {@code a}. */
+    static int mix(int a, int b, float t) {
+        return Color.rgb(
+                Math.round(Color.red(a) + (Color.red(b) - Color.red(a)) * t),
+                Math.round(Color.green(a) + (Color.green(b) - Color.green(a)) * t),
+                Math.round(Color.blue(a) + (Color.blue(b) - Color.blue(a)) * t));
+    }
 }

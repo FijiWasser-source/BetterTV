@@ -23,10 +23,9 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     interface Listener {
         void onOpen(AppEntry entry);
         void onMenu(AppEntry entry);
-        void onFocus(AppEntry entry, int color);
     }
 
-    private static final int NEUTRAL = Color.rgb(0x2C, 0x2C, 0x2E);
+    private static final int SURFACE = Color.rgb(0x16, 0x1B, 0x30);
     private static final float FOCUS_SCALE = 1.12f;
 
     private final Listener listener;
@@ -53,7 +52,7 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
     private int colorOf(AppEntry e) {
         Integer c = colors.get(e.key);
         if (c == null) {
-            c = e.isSettings() ? NEUTRAL : Tint.average(e.banner != null ? e.banner : e.icon, NEUTRAL);
+            c = Tint.average(e.banner != null ? e.banner : e.icon, SURFACE);
             colors.put(e.key, c);
         }
         return c;
@@ -85,9 +84,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
             h.banner.setVisibility(View.GONE);
             h.icon.setVisibility(View.VISIBLE);
             h.icon.setImageDrawable(e.icon);
-            // Fläche in einer gedeckten Version der App-Farbe, wie die vollflächigen tvOS-Icons
-            h.card.setBackgroundTintList(ColorStateList.valueOf(
-                    e.isSettings() ? NEUTRAL : Tint.darken(color, 0.35f)));
+            // Inhaltsebene: ruhige Fläche im Farbschema, nur leicht in Richtung App-Farbe
+            h.card.setBackgroundTintList(ColorStateList.valueOf(Tint.mix(SURFACE, color, 0.3f)));
         }
         h.pin.setVisibility(e.pinned ? View.VISIBLE : View.GONE);
         applyFocus(h, h.card.isFocused(), false);
@@ -109,7 +107,6 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         });
         h.card.setOnFocusChangeListener((v, focused) -> {
             applyFocus(h, focused, true);
-            if (focused) listener.onFocus(e, color);
         });
     }
 

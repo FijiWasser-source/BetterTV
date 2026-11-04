@@ -1,14 +1,27 @@
 # Klar – werbefreie Startseite für Android TV / Google TV
 
 Ein ruhiger, schlichter Startbildschirm statt der Android-TV-Oberfläche mit
-Empfehlungs- und Werbezeilen – gestaltet nach Apples Designsprache (tvOS):
-dunkle Flächen, abgerundete Kacheln ohne Rahmen, Fokus durch Anheben mit Lichtreflex,
-App-Name nur unter der gewählten Kachel, Hintergrund färbt sich sanft passend zur App,
-Menüs als schwebende Tafeln mit weißer Fokus-Schaltfläche.
+Empfehlungs- und Werbezeilen – gestaltet nach Apples Liquid-Glass-Richtlinien (HIG), im
+Farbschema **„Polarnacht“** (Nachtblau mit Polarlicht in Indigo, Petrol und Violett).
 
-![Vorschau](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_home_home.png)
+| Ebene | Elemente | Gestaltung |
+|---|---|---|
+| Bedienebene | Leiste oben rechts (Wetter, Einstellungen), Menüs | Glas: weichgezeichneter, leicht vergrößerter Hintergrund, Glanzlicht, helle Innen- und dunkle Außenkante |
+| Inhalt | Hintergrund, Uhr, App-Kacheln | Kein Glas: feste Flächen, das Farbschema lebt hier |
+
+- Kein Glas auf Glas: Schaltflächen auf Glas sind Füllungen; die fokussierte wird weiß.
+- Text auf Glas ist reinweiß, Hierarchie über Größe und Stärke.
+- Akzentfarbe (Systemblau) nur für die Hauptaktion (z. B. „Speichern“) und den Punkt für angeheftete Apps.
+- Konzentrische Ecken: Menü 28 dp − 16 dp Abstand = 12 dp Schaltflächen; Kapsel 60 dp → 44 dp Kreis.
+
+![Startseite](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_home_home.png)
+![Menü](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_menu_menu.png)
 
 *Vorschau mit Platzhalter-Bannern; auf dem TV erscheinen die echten Banner der Apps.*
+
+**Hinweis:** Echtes Liquid Glass (Lichtbrechung in Echtzeit) gibt es nur auf Apple-Geräten.
+Klar bildet es nach: Die Unschärfe wird einmalig berechnet (beim Start bzw. beim Öffnen eines
+Menüs), damit es auch auf älteren Fernsehern flüssig bleibt.
 
 Läuft ab Android 5, also auch auf dem **Sony BRAVIA KD-65XD7505** (Android TV 6/7)
 und auf neueren Google-TV-Geräten.
@@ -92,8 +105,8 @@ schlicht wie Klar.
   sie, die Home-Taste führt dann zu Klar. Sony-Menüs (Action-Menü, Eingänge, Bild) bleiben.
 - Am TV zusätzlich abschalten, falls vorhanden: *Samba Interactive TV* (Inhaltserkennung)
   und Sony-Empfehlungen/Datenschutz-Optionen in den Einstellungen.
-- Der TV ist von 2016 und eher langsam: Klar verzichtet deshalb auf Unschärfe-Effekte und
-  nutzt nur kurze, leichte Animationen.
+- Der TV ist von 2016 und eher langsam: Unschärfe wird deshalb nur einmal berechnet, nicht
+  pro Bild, und Animationen bleiben kurz.
 
 ## 5. Werbung & Tracking im Netz
 
@@ -123,4 +136,5 @@ cd tv-launcher
 
 Aufbau: `MainActivity` (Oberfläche & Dialoge), `AppLoader` (installierte Apps), `AppOrder`
 (Sortierlogik, getestet), `Weather` (Open-Meteo), `Prefs` (lokale Einstellungen),
-`Sheet` (tvOS-artige Menüs), `Tint` (App-Farbe für Kacheln/Hintergrund).
+`Sheet` (Glas-Menüs), `GlassLayout` (Glas-Material), `Aurora` (Hintergrund + Weichzeichner),
+`Chrome` (verbindet beides), `Tint` (App-Farbe für Kacheln).

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GlassLayout">
+        <!-- Eckenradius; ohne Angabe: Kapsel (halbe Höhe), wie die Glas-Grundform -->
+        <attr name="glassRadius" format="dimension" />
+        <!-- Abdunkelung des Hintergrunds unter dem Glas (0..1) für Lesbarkeit -->
+        <attr name="glassDim" format="float" />
+    </declare-styleable>
+</resources>

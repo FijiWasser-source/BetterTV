@@ -10,8 +10,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
- * Menü im Stil der tvOS-Kontextmenüs: mittige, abgerundete Tafel, Schaltflächen
- * untereinander, die fokussierte wird weiß.
+ * Menü als schwebende Glastafel (Bedienebene). Schaltflächen darauf sind Füllungen,
+ * kein zweites Glas; die fokussierte wird weiß wie auf tvOS.
  */
 final class Sheet {
     private final Dialog dialog;
@@ -23,7 +23,12 @@ final class Sheet {
     Sheet(Activity activity, CharSequence title) {
         dialog = new Dialog(activity, R.style.Theme_Klar_Sheet);
         inflater = LayoutInflater.from(activity);
-        View root = inflater.inflate(R.layout.sheet, null);
+        GlassLayout root = (GlassLayout) inflater.inflate(R.layout.sheet, null);
+        // Glas zeigt weichgezeichnet, was dahinter liegt: Bildschirmfoto beim Öffnen
+        View content = activity.getWindow().getDecorView();
+        if (content.getWidth() > 0) {
+            root.setBackdrop(Aurora.snapshot(content), Aurora.BLUR_DOWNSCALE);
+        }
         ((TextView) root.findViewById(R.id.sheet_title)).setText(title);
         buttons = root.findViewById(R.id.sheet_buttons);
         extra = root.findViewById(R.id.sheet_extra);
@@ -45,7 +50,17 @@ final class Sheet {
     }
 
     Sheet button(CharSequence label, Runnable action) {
+        return add(label, action, false);
+    }
+
+    /** Hauptaktion: höchstens eine pro Menü, farbig hinterlegt. */
+    Sheet primary(CharSequence label, Runnable action) {
+        return add(label, action, true);
+    }
+
+    private Sheet add(CharSequence label, Runnable action, boolean primary) {
         TextView b = (TextView) inflater.inflate(R.layout.sheet_button, buttons, false);
+        if (primary) b.setBackgroundResource(R.drawable.sheet_button_primary);
         b.setText(label);
         b.setOnClickListener(v -> {
             dialog.dismiss();

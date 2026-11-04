@@ -43,8 +43,8 @@
 
         <View
             android:id="@+id/pin"
-            android:layout_width="6dp"
-            android:layout_height="6dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_gravity="top|end"
             android:layout_margin="9dp"
             android:background="@drawable/pin_dot"

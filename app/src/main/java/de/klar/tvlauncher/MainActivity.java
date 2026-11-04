@@ -1,7 +1,6 @@
 package de.klar.tvlauncher;
 
 import android.app.Activity;
-import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
@@ -47,9 +46,6 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private TextView weatherTemp;
     private TextView weatherText;
     private String focusKey;
-    private View ambient;
-    private int ambientColor;
-    private ObjectAnimator ambientAnim;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +54,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         prefs = new Prefs(this);
         weatherTemp = findViewById(R.id.weather_temp);
         weatherText = findViewById(R.id.weather_text);
-        ambient = findViewById(R.id.ambient);
-        ambientColor = color(R.color.bg_raised);
+        findViewById(R.id.settings_button).setOnClickListener(v -> showSettings());
+        View root = findViewById(R.id.root);
+        GlassLayout bar = findViewById(R.id.glass_bar);
+        root.post(() -> Chrome.install(root, bar));
 
         grid = findViewById(R.id.grid);
         grid.setLayoutManager(new GridLayoutManager(this, COLUMNS));
@@ -121,7 +119,6 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
 
     @Override
     public void onOpen(AppEntry entry) {
-        if (entry.isSettings()) { showSettings(); return; }
         focusKey = entry.key;
         try {
             startActivity(entry.launchIntent);
@@ -132,7 +129,6 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
 
     @Override
     public void onMenu(AppEntry entry) {
-        if (entry.isSettings()) { showSettings(); return; }
         focusKey = entry.key;
         Sheet sheet = new Sheet(this, entry.label);
         if (entry.pinned) {
@@ -146,17 +142,6 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
              .button("App-Info", () -> openAppInfo(entry.packageName))
              .button("Abbrechen", null)
              .show();
-    }
-
-    @Override
-    public void onFocus(AppEntry entry, int color) {
-        int target = Tint.darken(color, 0.45f);
-        if (target == ambientColor) return;
-        if (ambientAnim != null) ambientAnim.cancel();
-        ambientAnim = ObjectAnimator.ofArgb(ambient, "backgroundColor", ambientColor, target);
-        ambientAnim.setDuration(600);
-        ambientAnim.start();
-        ambientColor = target;
     }
 
     private void setPinned(String key, boolean pin) {
@@ -233,7 +218,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         input.setText(prefs.city());
         input.setSelectAllOnFocus(true);
         input.setTextColor(color(R.color.text));
-        input.setHintTextColor(color(R.color.text_faint));
+        input.setHintTextColor(0x99FFFFFF);
         input.setTextSize(18);
         input.setGravity(Gravity.CENTER);
         input.setBackgroundResource(R.drawable.sheet_input);
@@ -242,7 +227,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         new Sheet(this, "Ort für das Wetter")
                 .message("Nur dieser Ort wird an Open-Meteo gesendet.")
                 .extra(input)
-                .button("Speichern", () -> saveCity(input.getText().toString()))
+                .primary("Speichern", () -> saveCity(input.getText().toString()))
                 .button("Kein Wetter anzeigen", () -> { prefs.clearLocation(); refreshWeather(); })
                 .button("Abbrechen", null)
                 .show();

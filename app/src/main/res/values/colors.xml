@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Angelehnt an Apples dunkle Systemfarben (tvOS / iOS Dark Mode) -->
-    <color name="bg">#000000</color>
-    <color name="bg_raised">#1C1C1E</color>
-    <color name="fill">#2C2C2E</color>
-    <color name="fill_soft">#1AFFFFFF</color>
+    <!-- Farbschema "Polarnacht". Die Markenfarbe lebt im Inhalt (Hintergrund);
+         Bedienelemente bleiben neutral, Akzent nur für die Hauptaktion und Status. -->
+    <color name="bg">#070A18</color>
+    <color name="aurora_indigo">#3B3FBF</color>
+    <color name="aurora_teal">#0E8C84</color>
+    <color name="aurora_violet">#7A3FD1</color>
+
+    <color name="surface">#161B30</color>
     <color name="text">#FFFFFF</color>
-    <color name="text_muted">#99EBEBF5</color>
-    <color name="text_faint">#4DEBEBF5</color>
+    <color name="text_content_secondary">#B4BAD6</color>
+    <color name="accent">#0A84FF</color>
+
+    <!-- Füllungen auf Glas (kein Glas auf Glas) -->
+    <color name="glass_fill">#26FFFFFF</color>
     <color name="focus">#FFFFFF</color>
     <color name="on_focus">#000000</color>
 </resources>

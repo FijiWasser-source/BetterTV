@@ -49,8 +49,6 @@ final class AppLoader {
             result.add(new AppEntry(key, labels.get(key), info.packageName, banner,
                     info.loadIcon(pm), launch, pinned.contains(key)));
         }
-        result.add(new AppEntry(AppEntry.SETTINGS_KEY, context.getString(R.string.settings), null,
-                null, context.getDrawable(R.drawable.ic_settings), null, false));
         return result;
     }
 
