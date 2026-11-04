@@ -94,14 +94,6 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         h.card.setTag(e.key);
         if (abend && !(h.card.getBackground() instanceof AbendTile)) {
             h.card.setBackground(new AbendTile(density, 16));
-            // Banner mit runden Ecken (passend zur Kachelrundung)
-            final float r = 10 * density;
-            h.banner.setOutlineProvider(new android.view.ViewOutlineProvider() {
-                @Override public void getOutline(View v, android.graphics.Outline o) {
-                    o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), r);
-                }
-            });
-            h.banner.setClipToOutline(true);
         }
         if (h.number != null) {
             // Nummer = Taste auf der Fernbedienung (nur echte Apps, 1–9)
@@ -113,7 +105,8 @@ final class TileAdapter extends RecyclerView.Adapter<TileAdapter.Holder> {
         h.card.setClipToOutline(true);
 
         if (e.banner != null) {
-            h.banner.setImageDrawable(e.banner);
+            // Im Design "Abend" runde Ecken direkt im Bild – bleibt auch bei Fokus (Software-Zeichnung) rund
+            h.banner.setImageDrawable(abend ? new RoundedDrawable(e.banner, 10 * density) : e.banner);
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.card.setBackgroundTintList(null);

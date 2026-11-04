@@ -245,7 +245,7 @@ public class PreviewTest {
         layout(root);
         // Fokus auf der dritten Kachel nachstellen
         View card = dock.getChildAt(2).findViewById(R.id.card);
-        ((AbendTile) card.getBackground()).setFocused(true);
+        AbendTile.focus(card, true); // wie auf dem TV: Software-Ebene für das Leuchten
         card.setScaleX(1.06f); card.setScaleY(1.06f);
         ((TextView) card.findViewById(R.id.number)).setTextColor(AbendTile.ORANGE);
         ((Mascot) root.findViewById(R.id.mascot)).preview(Mascot.Emote.HEART, false);
