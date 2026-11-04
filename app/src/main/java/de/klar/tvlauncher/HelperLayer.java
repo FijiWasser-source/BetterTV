@@ -41,6 +41,7 @@ public class HelperLayer extends View {
 
     private static final int BODY = 0xFF8FB4FF, BODY_DARK = 0xFF6F94DF, INK = 0xFF1B2640;
     private static final int MAX_ITEMS = 14;
+    private static final java.util.Comparator<Item> ITEM_ORDER = (a, b) -> Float.compare(a.x, b.x);
 
     private final Paint paint = new Paint();
     private final Paint soft = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -180,7 +181,7 @@ public class HelperLayer extends View {
         for (Item it : items) if (it.state >= 2) { current = it; break; }
 
         // von links nach rechts: das vorderste Teil zuerst, damit sich die Schlange sauber staut
-        items.sort((a, b) -> Float.compare(a.x, b.x));
+        java.util.Collections.sort(items, ITEM_ORDER);
         float frontLimit = nozzleX + 1 * p;
         for (Iterator<Item> iter = items.iterator(); iter.hasNext(); ) {
             Item it = iter.next();
