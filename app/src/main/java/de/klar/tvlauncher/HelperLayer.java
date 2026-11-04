@@ -28,8 +28,12 @@ public class HelperLayer extends View {
         void onCrunch();
     }
 
-    static final class Piece {
-        float x, y, vx, vy, size; int color; float age; boolean sucking;
+    /** Ein Teil auf dem Haufen: 0 Bahnstein, 1 Stein, 2 Kiste, 3 Block. */
+    static final class Item {
+        int type; float x;          // x: Position auf der Fläche (px, lokal)
+        float drop, vy;             // Höhe über der Fläche beim Herunterfallen
+        float suck = -1;            // >= 0: wird gerade eingesaugt (0..1)
+        boolean eat;
     }
 
     private static final int BODY = 0xFF8FB4FF, BODY_DARK = 0xFF6F94DF, INK = 0xFF1B2640;
@@ -38,7 +42,10 @@ public class HelperLayer extends View {
     private final Paint soft = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
     private final Random rnd = new Random();
-    private final List<Piece> pieces = new ArrayList<>();
+    private final List<Item> pile = new ArrayList<>();
+    private static final int MAX_PILE = 10;
+    private float nextBite = 1f;
+    private float spotLeft, spotRight;   // Fläche des Icons rechts neben Schluck
     private final List<float[]> crumbs = new ArrayList<>(); // {x, y, vy, alter}
     private final int[] loc = new int[2], other = new int[2];
     private float p; // Pixelgröße der Figur
@@ -69,19 +76,23 @@ public class HelperLayer extends View {
 
     private boolean sleeping() { return forceLevel != null ? forceSleep : mascot != null && mascot.isSleeping(); }
 
-    /** Ein Stein bröckelt ab (Bildschirmkoordinaten). */
-    public void addPiece(float screenX, float screenY, float size, int color) {
-        getLocationOnScreen(loc);
-        Piece pc = new Piece();
-        pc.x = screenX - loc[0]; pc.y = screenY - loc[1]; pc.size = size; pc.color = color;
-        pc.vx = -(20 + rnd.nextFloat() * 30) * p; pc.vy = -(4 + rnd.nextFloat() * 8) * p;
-        if (pieces.size() < 40) pieces.add(pc);
+    /** Ein Teil fällt auf das Icon (0 Bahnstein, 1 Stein, 2 Kiste, 3 Block). */
+    public void addPiece(int type) {
+        if (pile.size() >= MAX_PILE || !hasSpot) return;
+        Item it = new Item();
+        it.type = type;
+        it.x = spotLeft + rnd.nextFloat() * Math.max(1, spotRight - spotLeft - 6 * p);
+        it.drop = (12 + rnd.nextFloat() * 6) * p;
+        pile.add(it);
     }
+
+    /** Kompatibel zum alten Aufruf (Bildschirmkoordinaten werden nicht mehr gebraucht). */
+    public void addPiece(float screenX, float screenY, float size, int color) { addPiece(0); }
 
     /** Vorschau: Figur mitten beim Einsaugen bzw. Essen. */
     void preview(int level, boolean eating) {
         forceLevel = level; forceSleep = false;
-        pieces.clear();
+        pile.clear();
         previewPieces = true;
         mouthOpen = eating ? 0.5f : 1f; armReach = 1f; chewing = eating ? 0.5f : 0;
         if (eating) { bubble = "MAMPF!"; bubbleAge = 0.3f; }
@@ -90,17 +101,18 @@ public class HelperLayer extends View {
 
     private boolean previewPieces;
 
-    /** Vorschau-Steine erst anlegen, wenn die Position der Kachel feststeht. */
+    /** Vorschau-Haufen erst anlegen, wenn die Position des Icons feststeht. */
     private void placePreviewPieces() {
         previewPieces = false;
-        if (hasSpot) {
-            for (int k = 0; k < 4; k++) {   // auf der Flugbahn von der Laufbahn zum Mund
-                Piece pc = new Piece();
-                pc.x = mouthX() + (8 + k * 15) * p; pc.y = mouthY() - (2 + k * 3.5f) * p;
-                pc.size = (2.4f + k * 0.4f) * p; pc.color = 0xFF868A92; pc.sucking = k < 2;
-                pieces.add(pc);
-            }
+        if (!hasSpot) return;
+        pile.clear();
+        int[] types = {0, 2, 1, 0, 3, 0};
+        for (int k = 0; k < types.length; k++) {
+            Item it = new Item(); it.type = types[k];
+            it.x = spotLeft + k * (spotRight - spotLeft - 4 * p) / types.length;
+            pile.add(it);
         }
+        pile.get(0).suck = 0.55f;
     }
 
     @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); resume(); }
@@ -127,8 +139,11 @@ public class HelperLayer extends View {
         base.getLocationOnScreen(other);
         float d = getResources().getDisplayMetrics().density;
         float top = other[1] - loc[1] + (base == card ? 10 * d : 0);
-        footX = other[0] - loc[0] + base.getWidth() * 0.32f;
+        float left = other[0] - loc[0];
+        footX = left + base.getWidth() * 0.2f;
         footY = top + 1;
+        spotLeft = footX + 8 * p;
+        spotRight = left + base.getWidth() - 2 * p;
         hasSpot = true;
     }
 
@@ -137,56 +152,82 @@ public class HelperLayer extends View {
 
     private void step(float dt) {
         int lv = level();
-        float stress = Math.min(3f, 1 + 0.28f * (lv - 1));
+        boolean crowded = pile.size() >= 6;
+        float stress = Math.min(3f, 1 + 0.28f * (lv - 1) + (crowded ? 0.6f : 0));
         time += dt * stress;
         sweatPhase += dt;
-        boolean anyClose = false;
-        for (Iterator<Piece> it = pieces.iterator(); it.hasNext(); ) {
-            Piece pc = it.next();
-            pc.age += dt;
-            float dx = mouthX() - pc.x, dy = mouthY() - pc.y;
-            float dist = (float) Math.hypot(dx, dy);
-            if (!hasSpot) { pc.vy += 220 * p * dt; pc.x += pc.vx * dt; pc.y += pc.vy * dt; }
-            else if (pc.sucking || dist < 30 * p) {
-                pc.sucking = true; anyClose = true;
-                float sp = (90 + 60 * stress) * p;              // Sog
-                pc.x += dx / Math.max(1, dist) * sp * dt;
-                pc.y += dy / Math.max(1, dist) * sp * dt;
-                pc.size = Math.max(p * 0.8f, pc.size - p * 2.5f * dt);
-                if (dist < 3 * p) {
-                    it.remove();
-                    boolean bite = lv >= 4 && chewing <= 0 && rnd.nextInt(100) < 6 + lv * 2;
-                    if (bite) {
-                        chewing = 0.9f;
-                        if (rnd.nextBoolean()) { bubble = rnd.nextBoolean() ? "MAMPF!" : "LECKER!"; bubbleAge = 0; }
-                        for (int k = 0; k < 6; k++) crumbs.add(new float[]{mouthX(), mouthY() + 2 * p, (20 + rnd.nextFloat() * 30) * p, 0, (rnd.nextFloat() - 0.5f) * 30 * p});
-                        if (events != null) events.onCrunch();
-                    } else {
-                        long now = SystemClock.uptimeMillis();
-                        if (events != null && now - lastSuckSound > 300) { events.onSuck(); lastSuckSound = now; }
-                    }
-                    continue;
-                }
-            } else {
-                // Fallen, dabei sanft zur Figur gezogen
-                pc.vy += 140 * p * dt;
-                pc.vx += dx * 0.9f * dt;
-                pc.vy = Math.min(pc.vy, 70 * p);
-                pc.x += pc.vx * dt; pc.y += pc.vy * dt;
-            }
-            if (pc.y > getHeight() + 20 * p || pc.age > 8) it.remove();
+        // herunterfallende Teile landen auf der Fläche
+        for (Item it : pile) {
+            if (it.drop > 0) { it.vy += 160 * p * dt; it.drop = Math.max(0, it.drop - it.vy * dt); if (it.drop == 0) it.vy = 0; }
         }
-        mouthOpen += ((anyClose ? 1f : 0.1f) - mouthOpen) * Math.min(1, dt * 8);
-        armReach += ((anyClose ? 1f : 0f) - armReach) * Math.min(1, dt * 6);
+        // Tempo: Level 1 gemütlich (~1 pro Sekunde), höher und bei vollem Haufen schneller
+        float interval = Math.max(0.28f, 1.0f / (1 + 0.35f * (lv - 1))) * (crowded ? 0.7f : 1f);
+        Item current = null;
+        for (Item it : pile) if (it.suck >= 0) { current = it; break; }
+        if (current == null) {
+            nextBite -= dt;
+            if (nextBite <= 0 && !pile.isEmpty()) {
+                Item nearest = null;
+                for (Item it : pile) if (it.drop == 0 && (nearest == null || it.x < nearest.x)) nearest = it;
+                if (nearest != null) {
+                    nearest.suck = 0;
+                    nearest.eat = (lv >= 4 || crowded) && rnd.nextInt(100) < 10 + lv * 3 + (crowded ? 15 : 0);
+                    current = nearest;
+                }
+                nextBite = interval;
+            }
+        }
+        if (current != null) {
+            current.suck += dt / (0.18f + 0.5f * interval);
+            if (current.suck >= 1) {
+                pile.remove(current);
+                if (current.eat) {
+                    chewing = 0.9f;
+                    if (rnd.nextBoolean()) { bubble = rnd.nextBoolean() ? "MAMPF!" : "LECKER!"; bubbleAge = 0; }
+                    for (int k = 0; k < 6; k++) crumbs.add(new float[]{mouthX(), mouthY() + 2 * p, (20 + rnd.nextFloat() * 30) * p, 0, (rnd.nextFloat() - 0.5f) * 30 * p});
+                    if (events != null) events.onCrunch();
+                } else {
+                    long now = SystemClock.uptimeMillis();
+                    if (events != null && now - lastSuckSound > 250) { events.onSuck(); lastSuckSound = now; }
+                }
+            }
+        }
+        boolean active = current != null;
+        mouthOpen += ((active && !(current != null && current.eat) ? 1f : 0.1f) - mouthOpen) * Math.min(1, dt * 8);
+        armReach += ((active ? 1f : 0f) - armReach) * Math.min(1, dt * 6);
         chewing = Math.max(0, chewing - dt);
         bubbleAge += dt;
         if (bubbleAge > 1.6f) bubble = null;
-        if (bubble == null && lv >= 6 && rnd.nextInt(600) == 0) { bubble = "ZU SCHNELL!"; bubbleAge = 0; }
+        if (bubble == null && pile.size() >= 8 && rnd.nextInt(240) == 0) { bubble = "ZU VIELE!"; bubbleAge = 0; }
         for (Iterator<float[]> it = crumbs.iterator(); it.hasNext(); ) {
             float[] c = it.next();
             c[3] += dt; c[2] += 160 * p * dt; c[1] += c[2] * dt; c[0] += c[4] * dt;
             if (c[3] > 1.2f) it.remove();
         }
+    }
+
+    private void drawItem(Canvas c, Item it) {
+        float w, h; int top, side;
+        switch (it.type) {
+            case 1: w = 3; h = 2; top = 0xFF8E929A; side = 0xFF6C7078; break;   // Stein
+            case 2: w = 3; h = 3; top = 0xFFC98A4B; side = 0xFF9C6534; break;   // Kiste
+            case 3: w = 2; h = 3.5f; top = 0xFF8E929A; side = 0xFF5F636A; break; // Block
+            default: w = 4; h = 1.6f; top = 0xFFA3A7AE; side = 0xFF6C7078; break; // Bahnstein
+        }
+        float x = it.x, y = footY - it.drop - h * p * 1.5f;
+        float scale = 1.5f;   // gut sichtbar auf dem Fernseher
+        if (it.suck >= 0) { // auf dem Weg in den Mund: hinziehen und kleiner werden
+            float k = it.suck * it.suck;
+            x = it.x + (mouthX() - it.x) * k;
+            y = y + (mouthY() - y) * k;
+            scale = 1.5f * (1 - 0.7f * k);
+        }
+        paint.setColor(side);
+        rect.set(x, y, x + w * p * scale, y + h * p * scale);
+        c.drawRect(rect, paint);
+        paint.setColor(top);
+        rect.set(x, y, x + w * p * scale, y + Math.min(h, 0.9f) * p * scale);
+        c.drawRect(rect, paint);
     }
 
     @Override protected void onDraw(Canvas c) {
@@ -195,32 +236,19 @@ public class HelperLayer extends View {
         last = now;
         findSpot();
         if (previewPieces) placePreviewPieces();
+        if (!hasSpot) pile.clear();
         if (forceLevel == null && !sleeping()) step(dt);
 
-        // fallende / eingesaugte Steine
-        for (Piece pc : pieces) {
-            paint.setColor(pc.color);
-            rect.set(pc.x, pc.y, pc.x + pc.size, pc.y + pc.size * 0.7f);
-            c.drawRect(rect, paint);
-            if (pc.sucking) { // kurze, verblassende Sog-Spur hinter dem Stein
-                float dx = pc.x - mouthX(), dy = pc.y - mouthY();
-                float len = Math.max(1, (float) Math.hypot(dx, dy));
-                for (int k = 1; k <= 3; k++) {
-                    paint.setColor(((70 - k * 18) << 24) | 0xFFFFFF);
-                    float tx = pc.x + dx / len * k * 2.2f * p, ty = pc.y + dy / len * k * 2.2f * p;
-                    float sz = pc.size * (1 - k * 0.22f);
-                    rect.set(tx, ty, tx + sz, ty + sz * 0.7f);
-                    c.drawRect(rect, paint);
-                }
-            }
-        }
+        if (hasSpot) for (Item it : pile) if (it.suck < 0) drawItem(c, it);
         if (hasSpot) drawHelper(c);
+        if (hasSpot) for (Item it : pile) if (it.suck >= 0) drawItem(c, it);   // vor dem Mund
         for (float[] cr : crumbs) {
             paint.setColor(((int) (255 * Math.max(0, 1 - cr[3] / 1.2f)) << 24) | 0xA3A7AE);
             rect.set(cr[0], cr[1], cr[0] + p * 0.8f, cr[1] + p * 0.8f);
             c.drawRect(rect, paint);
         }
-        if (running && forceLevel == null) postInvalidateDelayed(33);
+        boolean busy = !pile.isEmpty() || !crumbs.isEmpty() || chewing > 0;
+        if (running && forceLevel == null) postInvalidateDelayed(busy ? 40 : 90); // ruhig = seltener zeichnen
     }
 
     private void px(Canvas c, float gx, float gy, float w, float h, int color) {

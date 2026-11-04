@@ -58,6 +58,15 @@ public class SkyLayer extends View {
 
     private final Paint paint = new Paint();
     private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG); // weicher Mondschein
+    private float glowKey = Float.NaN;
+    private static final int[] GLOW_COLORS = {0x55DCE6FF, 0x22DCE6FF, 0x00DCE6FF};
+    private static final float[] GLOW_STOPS = {0f, 0.45f, 1f};
+    // Glühwürmchen: feste Grundpositionen (einmal berechnet statt pro Bild)
+    private static final float[] FLY_X = new float[9], FLY_Y = new float[9];
+    static {
+        Random fr = new Random(11);
+        for (int k = 0; k < 9; k++) { FLY_X[k] = fr.nextFloat(); FLY_Y[k] = 0.6f + fr.nextFloat() * 0.35f; }
+    }
     private final RectF rect = new RectF();
     private final Random rnd = new Random();
     private final List<Sprite> sprites = new ArrayList<>();
@@ -174,9 +183,11 @@ public class SkyLayer extends View {
             // heller Mond mit sanftem Schein
             float mx = w * 0.5f, my = h * 0.07f, ms = px * 1.3f;
             float cx = mx + 4.5f * ms, cy = my + 4.5f * ms, r = 13 * ms;   // Mitte des Vollmonds
-            glow.setShader(new android.graphics.RadialGradient(cx, cy, r,
-                    new int[]{0x55DCE6FF, 0x22DCE6FF, 0x00DCE6FF}, new float[]{0f, 0.45f, 1f},
-                    android.graphics.Shader.TileMode.CLAMP));
+            if (glow.getShader() == null || glowKey != cx * 31 + cy * 7 + r) {
+                glowKey = cx * 31 + cy * 7 + r;
+                glow.setShader(new android.graphics.RadialGradient(cx, cy, r, GLOW_COLORS, GLOW_STOPS,
+                        android.graphics.Shader.TileMode.CLAMP));
+            }
             c.drawCircle(cx, cy, r, glow);
             for (int row = 0; row < MOON.length; row++) {
                 for (int k = 0; k < MOON[row].length(); k++) {
@@ -248,17 +259,16 @@ public class SkyLayer extends View {
 
         // Glühwürmchen abends/nachts im unteren Drittel
         if (evening()) {
-            Random fr = new Random(11);
             for (int k = 0; k < 9; k++) {
-                float fx = fr.nextFloat() * w + (float) Math.sin(t * 0.4 + k) * 12 * px;
-                float fy = h * (0.6f + fr.nextFloat() * 0.35f) + (float) Math.cos(t * 0.5 + k * 2) * 6 * px;
+                float fx = FLY_X[k] * w + (float) Math.sin(t * 0.4 + k) * 12 * px;
+                float fy = h * FLY_Y[k] + (float) Math.cos(t * 0.5 + k * 2) * 6 * px;
                 float glow = (float) (0.5 + 0.5 * Math.sin(t * 1.7 + k * 1.3));
                 paint.setColor(Math.round(110 * glow) << 24 | 0xFFE07A);
                 rect.set(fx, fy, fx + px * 0.8f, fy + px * 0.8f); c.drawRect(rect, paint);
             }
         }
 
-        if (running && forceHour == null) postInvalidateDelayed(50); // ~20 Bilder/s
+        if (running && forceHour == null) postInvalidateDelayed(66); // ~15 Bilder/s reichen für den Himmel
     }
 
     private void draw(Canvas c, String[] shape, float x, float y, float size) {

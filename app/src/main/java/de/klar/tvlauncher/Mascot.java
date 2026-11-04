@@ -48,6 +48,8 @@ public class Mascot extends View {
         default void onTalk(String text) {}
         default void onScream() {}
         default void onStartle() {}
+        /** Ein Hindernis (0 Stein, 1 Kiste, 2 Block) ist hinten aus dem Bild. */
+        default void onLeftBehind(int type) {}
         /** Ein Stein bröckelt ab (Bildschirmkoordinaten, Größe in px). */
         default void onCrumble(float screenX, float screenY, float size, int color) {}
     }
@@ -332,7 +334,10 @@ public class Mascot extends View {
         for (Iterator<Thing> it = things.iterator(); it.hasNext(); ) {
             Thing th = it.next();
             th.x -= dx;
-            if (th.x + th.w() < 0 || th.gone) it.remove();
+            if (th.x + th.w() < 0 || th.gone) {
+                if (!th.gone && th.type <= 2 && events != null && !simulating) events.onLeftBehind(th.type);
+                it.remove();
+            }
         }
 
         float heroL = HERO_X + HERO_L_OFF, heroR = HERO_R;
@@ -557,11 +562,13 @@ public class Mascot extends View {
         paint.setColor(0xFFFFC24A);
         drawIcon(canvas, STAR, cell * 2.5f, hudY, cell * 0.7f);
         paint.setColor(0xFFD7DAE0);
-        String count = String.valueOf(stars);
+        if (hudStars != stars) { hudStars = stars; hudCount = String.valueOf(stars); }
+        if (hudLevel != level) { hudLevel = level; hudLevelText = "LV " + level; }
+        String count = hudCount;
         PixelText.draw(canvas, count, cell * 7f, hudY, cell * 0.5f, paint);
         float hudX = cell * 7f + PixelText.measure(count, cell * 0.5f) + cell * 2.5f;
         paint.setColor(0xFF8FB4FF);
-        PixelText.draw(canvas, "LV " + level, hudX, hudY, cell * 0.5f, paint);
+        PixelText.draw(canvas, hudLevelText, hudX, hudY, cell * 0.5f, paint);
         if (manual) {
             paint.setColor(0xFFFF8A1F);
             PixelText.draw(canvas, "DU SPIELST", getWidth() - cell * 2.5f - PixelText.measure("DU SPIELST", cell * 0.5f),
@@ -622,6 +629,9 @@ public class Mascot extends View {
      * Versatz eines Blocks an Bildschirmposition x (in Zellen): {dy in Zellen, Deckkraft 0..1}.
      * Rechts fällt er von oben herein, links fällt er nach unten weg.
      */
+    private final float[] bs = new float[2]; // wiederverwendet (keine Objekte pro Bild)
+    private int hudStars = -1, hudLevel = -1; private String hudCount = "0", hudLevelText = "LV 1";
+
     private float[] blockState(float xCells, float trackCells, long index) {
         float j = jitter(index) * 0.35f;
         float fromRight = (trackCells - 1 - xCells) / BUILD_ZONE - j;      // < 1: wird gerade gebaut
@@ -629,34 +639,50 @@ public class Mascot extends View {
         if (fromRight < 1) {
             float p = Math.max(0, fromRight);
             float e = 1 - p;
-            return new float[]{-e * e * 12, Math.min(1, p * 1.6f)};
+            bs[0] = -e * e * 12; bs[1] = Math.min(1, p * 1.6f); return bs;
         }
         if (fromLeft < 1) {
             float p = Math.max(0, fromLeft);
             float e = 1 - p;
-            return new float[]{e * e * 9, Math.min(1, p * 1.4f)};
+            bs[0] = e * e * 9; bs[1] = Math.min(1, p * 1.4f); return bs;
         }
-        return new float[]{0, 1};
+        bs[0] = 0; bs[1] = 1; return bs;
     }
 
     private void drawTrack(Canvas c, float ground, boolean sleeping) {
         float trackCells = getWidth() / cell;
         int[] colors = {0xFFA3A7AE, 0xFF868A92, 0xFF4A4D54, 0xFF3C3E44, 0xFF2E3035};
+        // Mittelteil (fest liegende Steine) in wenigen Zügen zeichnen – nur die Ränder Stein für Stein
+        float steadyL = 1 + BREAK_ZONE * 1.4f + BLOCK, steadyR = trackCells - 1 - BUILD_ZONE * 1.4f - BLOCK;
+        if (steadyR > steadyL) {
+            for (int r = 0; r < colors.length; r++) {
+                paint.setColor(colors[r]);
+                rect.set(steadyL * cell, ground + r * cell, steadyR * cell + 0.5f, ground + (r + 1) * cell + 0.5f);
+                c.drawRect(rect, paint);
+            }
+            paint.setColor(0x802E3035);
+            float off = -(scroll % BLOCK);
+            for (float bx = steadyL + ((off % BLOCK) + BLOCK) % BLOCK; bx < steadyR; bx += BLOCK) {
+                rect.set(bx * cell, ground, bx * cell + 1, ground + 2 * cell);
+                c.drawRect(rect, paint);
+            }
+        }
         long first = (long) Math.floor(scroll / BLOCK) - 1;
         for (long i = first; ; i++) {
             float xCells = i * BLOCK - scroll;                 // linke Kante des Blocks in Zellen
             if (xCells > trackCells) break;
             if (xCells + BLOCK < 1) continue;
+            boolean inSteady = xCells >= steadyL && xCells + BLOCK <= steadyR;
             float[] st = blockState(xCells + BLOCK / 2, trackCells, i);
             if (events != null && forceNight == null && !sleeping && i > lastCrumbled && st[0] > 0 && st[0] < 4 && xCells < BREAK_ZONE) {
                 lastCrumbled = i;
-                int every = Math.max(1, 4 - (level - 1) / 2);   // Level 1–2: jeder 4., 3–4: 3., 5–6: 2., ab 7: jeder
+                int every = Math.max(3, 12 - 2 * (level - 1));   // Level 1: jeder 12. Stein … ab Level 5: jeder 4.
                 if (i % every == 0) {
                     getLocationOnScreen(screen);
                     events.onCrumble(screen[0] + Math.max(cell, xCells * cell), screen[1] + ground + st[0] * cell, BLOCK * cell * 0.8f, colors[1]);
                 }
             }
-            if (st[1] <= 0.01f) continue;
+            if (st[1] <= 0.01f || inSteady) continue;
             float x0 = Math.max(cell, xCells * cell), x1 = Math.min(getWidth() - cell, (xCells + BLOCK) * cell);
             if (x1 <= x0) continue;
             float dy = st[0] * cell;

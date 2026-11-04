@@ -158,8 +158,10 @@ public class PixelText extends View {
     }
 
     /** Zeichnet Text in Pixel-Schrift direkt auf eine Zeichenfläche (z. B. für das Mini-Spiel). */
+    private static final RectF DRAW_RECT = new RectF(); // nur im UI-Thread benutzt
+
     static void draw(Canvas c, String text, float x, float y, float cell, Paint p) {
-        RectF r = new RectF();
+        RectF r = DRAW_RECT;
         String up = text.toUpperCase(Locale.GERMAN);
         for (int i = 0; i < up.length(); i++) {
             String[] g = glyph(up.charAt(i));
