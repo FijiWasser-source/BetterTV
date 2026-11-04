@@ -193,6 +193,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             if (event.getAction() == KeyEvent.ACTION_UP) { focusKey = null; focusDock(0); }
             return true;
         }
+        if (code == KeyEvent.KEYCODE_0 && mascot != null) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) mascot.jump();
+            return true;
+        }
         if (code >= KeyEvent.KEYCODE_1 && code <= KeyEvent.KEYCODE_9) {
             if (event.getAction() == KeyEvent.ACTION_UP) launchNumber(code - KeyEvent.KEYCODE_1);
             return true;

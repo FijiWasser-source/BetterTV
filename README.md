@@ -30,8 +30,9 @@ Fernsehern flüssig bleibt.
 Begrüßung je nach Tageszeit („Guten Abend. Was läuft heute?“), Uhr, Datum und Wetter in
 Pixel-Schrift, grauer Hintergrund mit Punkteraster (wie Dot-Grid-Papier), nummerierte Kacheln mit orangem Leuchten bei Fokus, „Weiter mit …“ für die
 zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die jeweilige Kachel.
-In der Mitte wohnt **Pixel**, ein kleines Maskottchen (eigene Figur): wippt, blinzelt, hüpft,
-winkt, schaut zur gewählten Kachel, zeigt Emotes (Herz, Note, Stern, !, ?) und schläft nachts.
+In der Mitte läuft **Pixel**, ein kleines Maskottchen (eigene Figur), in einem Endlos-Jump-and-Run:
+rennt über eine Pixel-Laufbahn, springt automatisch über Steine, Kisten und Blöcke, sammelt
+Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. **Taste 0** lässt ihn springen.
 Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
 
 ![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)

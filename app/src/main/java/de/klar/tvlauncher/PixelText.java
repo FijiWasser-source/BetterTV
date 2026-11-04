@@ -145,4 +145,21 @@ public class PixelText extends View {
             x += g[0].length() * cell + cell;
         }
     }
+
+    /** Zeichnet Text in Pixel-Schrift direkt auf eine Zeichenfläche (z. B. für das Mini-Spiel). */
+    static void draw(Canvas c, String text, float x, float y, float cell, Paint p) {
+        RectF r = new RectF();
+        String up = text.toUpperCase(Locale.GERMAN);
+        for (int i = 0; i < up.length(); i++) {
+            String[] g = glyph(up.charAt(i));
+            for (int row = 0; row < 7; row++) {
+                for (int col = 0; col < g[row].length(); col++) {
+                    if (g[row].charAt(col) != '1') continue;
+                    r.set(x + col * cell, y + row * cell, x + (col + 1) * cell, y + (row + 1) * cell);
+                    c.drawRect(r, p);
+                }
+            }
+            x += g[0].length() * cell + cell;
+        }
+    }
 }
