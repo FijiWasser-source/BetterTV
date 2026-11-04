@@ -28,7 +28,7 @@ Fernsehern flüssig bleibt.
 ## Design „Abend“ (Standard ab 3.0)
 
 Begrüßung je nach Tageszeit („Guten Abend. Was läuft heute?“), Uhr, Datum und Wetter in
-Pixel-Schrift, nummerierte Kacheln mit orangem Leuchten bei Fokus, „Weiter mit …“ für die
+Pixel-Schrift, grauer Hintergrund mit Punkteraster (wie Dot-Grid-Papier), nummerierte Kacheln mit orangem Leuchten bei Fokus, „Weiter mit …“ für die
 zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die jeweilige Kachel.
 Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
 

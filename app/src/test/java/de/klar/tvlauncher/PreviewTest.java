@@ -241,8 +241,7 @@ public class PreviewTest {
         cl.setText("Netflix");
 
         layout(root);
-        ((android.widget.ImageView) root.findViewById(R.id.wallpaper))
-                .setImageBitmap(AbendBackground.render(1920, 1080));
+        root.findViewById(R.id.wallpaper).setBackground(AbendBackground.create(paparazzi.getContext()));
         layout(root);
         // Fokus auf der dritten Kachel nachstellen
         View card = dock.getChildAt(2).findViewById(R.id.card);

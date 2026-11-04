@@ -149,7 +149,8 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         if (root.getWidth() == 0) return;
         ImageView wall = findViewById(R.id.wallpaper);
         if (abend) {
-            wall.setImageBitmap(AbendBackground.render(root.getWidth(), root.getHeight()));
+            wall.setImageDrawable(null);
+            wall.setBackground(AbendBackground.create(this));
             return;
         }
         Wallpaper.Images img = Wallpaper.load(this, root.getWidth(), root.getHeight());
