@@ -72,7 +72,7 @@ public class Mascot extends View {
     // Spielwelt in Zellen
     private static final float SPEED = 14f;         // Zellen pro Sekunde
     private static final float JUMP_V = 36f, GRAVITY = 56f; // ~1,3 s Flugzeit, Scheitel ~11,6 Zellen
-    private static final float HERO_X = 16f;        // linker Rand der Figur auf der Bahn
+    private static final float HERO_X = 40f;        // linker Rand der Figur – weit genug rechts, dass hinter ihm viel Weg ist
     // Trefferfläche = Bereich der Beine (Spalten 2–11), damit Sprünge fair wirken
     private static final float HERO_L_OFF = 2f, HERO_R = HERO_X + 12f;
     private static final float GROUND_FROM_BOTTOM = 6f;
@@ -102,12 +102,31 @@ public class Mascot extends View {
     private float stumble;           // Sekunden, die Pixel noch durchgeschüttelt ist
     private int stars;
     int stumbles, obstaclesSpawned, landings; // für den Test
+    final List<String> stumbleLog = new ArrayList<>(); // für den Test: Umstände jedes Stolperers
+    private boolean simulating;
     private float floor;             // aktuelle Standhöhe (0 = Boden, sonst Plattform)
     private boolean manual;          // Spieler steuert selbst (Farbtasten)
     private long lastInput;
     private int level = 1;
     private String speech; private long speechStart, nextChatter;
     private static final long MANUAL_TIMEOUT = 20000;
+
+    // Verfolger-Auto (eigene Figur): fährt hinter Pixel her, Rauch aus dem Auspuff
+    private static final String[] CAR = {
+            ".....BBBBBB.......",
+            "....BWWBWWWB......",
+            "...BWWWBWWWWB.....",
+            "BBBBBBBBBBBBBBBBB.",
+            "RBBBBOOOOOOOOBBBBY",
+            "BBBBBBBBBBBBBBBBB.",
+            "..KKK.......KKK...",
+            "..KHK.......KHK...",
+    };
+    private static final float CAR_GAP = 22f;      // Wunschabstand hinter Pixel (Zellen)
+    private float carX = HERO_X - CAR_GAP, carY, carVy;
+    private boolean carAir;
+    private float puffTimer, wheelPhase;
+    private final List<float[]> puffs = new ArrayList<>(); // {x, y, alter}
     private long nextBlink, blinkUntil;
     private long nextEmote, emoteStart; private boolean emoteOn;
     private Emote emote = Emote.NONE;
@@ -173,6 +192,7 @@ public class Mascot extends View {
     /** Für den Test: Spiel ohne Bildschirm laufen lassen. */
     int simulate(float seconds, long seed) {
         rnd.setSeed(seed);
+        simulating = true;
         long now = 1_000_000L;
         for (float t = 0; t < seconds; t += 1f / 30) {
             now += 33;
@@ -193,6 +213,8 @@ public class Mascot extends View {
         things.add(new Thing(2, HERO_X + 62, 0));
         Thing pf = new Thing(4, HERO_X + 26, 6); pf.len = 14; things.add(pf);
         jumpY = 6; stars = 7; level = 2;
+        puffs.clear();
+        for (int k = 0; k < 5; k++) puffs.add(new float[]{carX - 0.5f - k * 1.6f, 3.5f + k * 0.6f, k * 0.25f});
         if (e == Emote.HEART) { speech = "Los geht's!"; speechStart = SystemClock.uptimeMillis(); }
         invalidate();
     }
@@ -259,7 +281,7 @@ public class Mascot extends View {
             } else {
                 int type = t < 10 ? 0 : t < 14 ? 1 : t < 16 ? 2 : 3;
                 Thing th = new Thing(type, trackCells, type == 3 ? 14 + rnd.nextInt(5) : 0);
-                th.miss = type != 3 && rnd.nextInt(100) < 5; // ganz selten verpasst er den Absprung
+                th.miss = type != 3 && rnd.nextInt(100) < 3; // ganz selten verpasst er den Absprung
                 things.add(th);
                 if (type != 3) obstaclesSpawned++;
                 nextSpawn = 16 + rnd.nextInt(22);
@@ -275,15 +297,22 @@ public class Mascot extends View {
 
         // automatisch springen (nur solange der Spieler nicht selbst steuert)
         if (!airborne && !manual) {
+            // Hindernisse haben Vorrang: für Sterne/Plattformen nur springen, wenn die Landezone frei ist
+            boolean obstacleSoon = false;
+            for (Thing th : things) {
+                if (th.type == 3 || th.type == 4) continue;
+                float gap = th.x - heroR;
+                if (floor == 0 && gap > 2.8f && gap < 24f) obstacleSoon = true;
+            }
             for (Thing th : things) {
                 float gap = th.x - heroR;
                 boolean window;
                 if (th.type == 4) {
                     float rise = th.top() - jumpY;
-                    window = rise > 0.5f && rise < 10.5f && gap > 1.2f && gap < 3.2f;
+                    window = !obstacleSoon && rise > 0.5f && rise < 10.5f && gap > 1.2f && gap < 3.2f;
                 } else if (th.type == 3) {
                     float rel = th.y - jumpY;
-                    window = rel > 2 && rel < 20 && gap > 0.5f && gap < 3f;
+                    window = !obstacleSoon && rel > 2 && rel < 20 && gap > 0.5f && gap < 3f;
                 } else {
                     window = floor == 0 && gap > 1.8f && gap < 2.8f && !th.miss;
                 }
@@ -317,6 +346,8 @@ public class Mascot extends View {
             if (!onIt) { airborne = true; vy = 0; floor = 0; }
         }
 
+        stepCar(dt, speed);
+
         // Treffer: Hindernis -> Stolpern, Stern -> einsammeln
         float feet = jumpY, head = jumpY + 12;
         for (Thing th : things) {
@@ -340,6 +371,7 @@ public class Mascot extends View {
                 }
             } else if (!th.hit && feet < th.h() - 0.3f) {
                 th.hit = true; // pro Hindernis höchstens einmal stolpern
+                if (simulating && stumbleLog.size() < 50) stumbleLog.add("typ=" + th.type + " miss=" + th.miss + " air=" + airborne + " floor=" + floor + " jumpY=" + String.format(java.util.Locale.ROOT, "%.1f", jumpY) + " vy=" + String.format(java.util.Locale.ROOT, "%.1f", vy));
                 stumble = 0.9f;
                 stumbles++;
                 showEmote(Emote.BANG);
@@ -347,6 +379,85 @@ public class Mascot extends View {
                 if (events != null) events.onBump();
                 vy = 14; airborne = true; // kleiner Hüpfer beim Stolpern
             }
+        }
+    }
+
+    /** Auto folgt Pixel: rückt näher, wenn er stolpert, hüpft über Hindernisse, pafft Rauch. */
+    private void stepCar(float dt, float speed) {
+        float target = HERO_X - (stumble > 0 ? CAR_GAP * 0.55f : CAR_GAP);
+        carX += (target - carX) * Math.min(1, dt * 1.2f);
+        carX = Math.min(carX, HERO_X - 19);                 // nie auffahren
+        wheelPhase += speed * dt;
+        // Hindernis direkt vor dem Auto -> kleiner Hüpfer
+        if (!carAir) {
+            for (Thing th : things) {
+                if (th.type == 4 || th.type == 3) continue;
+                float gap = th.x - (carX + 17);
+                if (gap > 0.5f && gap < 2.5f) { carVy = 26; carAir = true; break; }
+            }
+        } else {
+            carVy -= GRAVITY * dt;
+            carY += carVy * dt;
+            if (carY <= 0) { carY = 0; carVy = 0; carAir = false; }
+        }
+        // Rauchwölkchen aus dem Auspuff (hinten links)
+        puffTimer -= dt;
+        if (puffTimer <= 0) {
+            puffs.add(new float[]{carX - 0.5f, carY + 3.5f, 0});
+            puffTimer = 0.18f + rnd.nextFloat() * 0.12f;
+        }
+        for (Iterator<float[]> it = puffs.iterator(); it.hasNext(); ) {
+            float[] p = it.next();
+            p[2] += dt; p[0] -= (speed * 0.35f + 3) * dt; p[1] += 2.2f * dt;
+            if (p[2] > 1.4f || p[0] < 1) it.remove();
+        }
+    }
+
+    private void drawCar(Canvas c, float ground, boolean sleeping, long now) {
+        float s = cell * 1.05f;
+        float x = carX * cell, bounce = carAir || sleeping ? 0 : ((now / 90) % 2 == 0 ? 0 : s * 0.3f);
+        float top = ground - CAR.length * s - carY * cell - bounce;
+        // Rauch hinter dem Auto
+        for (float[] p : puffs) {
+            float life = p[2] / 1.4f;
+            int a = Math.round(90 * (1 - life));
+            soft.setColor((a << 24) | 0xC9CCD2);
+            float r = s * (0.6f + life * 1.6f);
+            float px0 = p[0] * cell, py0 = ground - p[1] * cell - carY * cell;
+            rect.set(px0 - r, py0 - r, px0 + r, py0 + r);
+            c.drawRect(rect, soft);
+        }
+        soft.setColor(0x4D000000);
+        // Schatten
+        rect.set(x + s, ground - s * 0.4f, x + 17 * s, ground + s * 0.5f);
+        c.drawOval(rect, soft);
+        boolean hubUp = ((int) (wheelPhase * 1.5f)) % 2 == 0;
+        for (int r = 0; r < CAR.length; r++) {
+            String line = CAR[r];
+            for (int k = 0; k < line.length(); k++) {
+                char ch = line.charAt(k);
+                int col;
+                switch (ch) {
+                    case 'B': col = 0xFF8FB4FF; break;                       // Lack im Klar-Blau
+                    case 'W': col = 0xFF2E3642; break;                       // Scheiben
+                    case 'O': col = 0xFFFF8A1F; break;                       // Zierstreifen
+                    case 'K': col = 0xFF1E2024; break;                       // Reifen
+                    case 'H': col = hubUp ? 0xFFB3B7BE : 0xFF6C7078; break;  // Radnabe "dreht"
+                    case 'Y': col = sleeping ? 0xFF6C6A55 : 0xFFFFE07A; break;  // Scheinwerfer
+                    case 'R': col = sleeping ? 0xFF5A2A2A : 0xFFFF5A5A; break;  // Rücklicht
+                    default: continue;
+                }
+                paint.setColor(col);
+                rect.set(x + k * s, top + r * s, x + (k + 1) * s + 0.5f, top + (r + 1) * s + 0.5f);
+                c.drawRect(rect, paint);
+            }
+        }
+        // Lichtkegel nach vorn
+        if (!sleeping) {
+            soft.setColor(0x22FFE07A);
+            rect.set(x + 18 * s, top + 3.5f * s, x + 26 * s, top + 5.5f * s);
+            c.drawRect(rect, soft);
+            soft.setColor(0x4D000000);
         }
     }
 
@@ -368,6 +479,8 @@ public class Mascot extends View {
             drawThing(canvas, th, ground);
         }
 
+        drawCar(canvas, ground, sleeping, now);
+
         // Figur
         float t = (now - start) / 1000f;
         float ox = HERO_X * cell;
@@ -385,18 +498,19 @@ public class Mascot extends View {
         drawHero(canvas, ox + shake, oy, now, t, sleeping);
 
         // Sternzähler, Level und Spieler-Anzeige in Pixel-Schrift
+        float hudY = cell * 1.5f; // oben links, außerhalb der Fahrbahn
         paint.setColor(0xFFFFC24A);
-        drawIcon(canvas, STAR, cell * 2.5f, ground - cell * 4.2f, cell * 0.7f);
+        drawIcon(canvas, STAR, cell * 2.5f, hudY, cell * 0.7f);
         paint.setColor(0xFFD7DAE0);
         String count = String.valueOf(stars);
-        PixelText.draw(canvas, count, cell * 7f, ground - cell * 4.2f, cell * 0.5f, paint);
+        PixelText.draw(canvas, count, cell * 7f, hudY, cell * 0.5f, paint);
         float hudX = cell * 7f + PixelText.measure(count, cell * 0.5f) + cell * 2.5f;
         paint.setColor(0xFF8FB4FF);
-        PixelText.draw(canvas, "LV " + level, hudX, ground - cell * 4.2f, cell * 0.5f, paint);
+        PixelText.draw(canvas, "LV " + level, hudX, hudY, cell * 0.5f, paint);
         if (manual) {
             paint.setColor(0xFFFF8A1F);
             PixelText.draw(canvas, "DU SPIELST", getWidth() - cell * 2.5f - PixelText.measure("DU SPIELST", cell * 0.5f),
-                    ground - cell * 4.2f, cell * 0.5f, paint);
+                    hudY, cell * 0.5f, paint);
         }
 
         if (!drawSpeech(canvas, now, ox + 14 * cell, oy - cell * 2f)) {

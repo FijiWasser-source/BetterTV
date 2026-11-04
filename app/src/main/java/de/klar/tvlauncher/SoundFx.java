@@ -16,7 +16,8 @@ final class SoundFx {
 
     private final Context context;
     private SoundPool pool;
-    private int jump, star, bump, talk, levelUp, land;
+    private int jump, star, bump, talk, levelUp, land, engine;
+    private int engineStream; private boolean engineWanted, engineLoaded;
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final java.util.Random rnd = new java.util.Random();
     private MediaPlayer music;
@@ -28,7 +29,7 @@ final class SoundFx {
 
     void setEnabled(boolean on) {
         enabled = on;
-        if (!on) pauseMusic();
+        if (!on) { pauseMusic(); stopEngine(); }
     }
 
     boolean enabled() { return enabled; }
@@ -45,6 +46,10 @@ final class SoundFx {
         talk = pool.load(context, R.raw.sfx_talk, 1);
         levelUp = pool.load(context, R.raw.sfx_levelup, 1);
         land = pool.load(context, R.raw.sfx_land, 1);
+        engine = pool.load(context, R.raw.sfx_engine, 1);
+        pool.setOnLoadCompleteListener((p, id, status) -> {
+            if (id == engine && status == 0) { engineLoaded = true; if (engineWanted) startEngine(); }
+        });
     }
 
     void jump() { play(jump, 0.6f); }
@@ -72,6 +77,20 @@ final class SoundFx {
         ensurePool();
         float v = FX_VOLUME * vol;
         pool.play(id, v, v, 1, 0, 1f);
+    }
+
+    /** Ganz leises Motorbrummen des Verfolger-Autos (Schleife). */
+    void startEngine() {
+        engineWanted = true;
+        if (!enabled) return;
+        ensurePool();
+        if (!engineLoaded || engineStream != 0) return;
+        engineStream = pool.play(engine, 0.06f, 0.06f, 0, -1, 1f);
+    }
+
+    void stopEngine() {
+        engineWanted = false;
+        if (pool != null && engineStream != 0) { pool.stop(engineStream); engineStream = 0; }
     }
 
     /** Musik starten oder weiterlaufen lassen (nachts bleibt sie aus). */

@@ -165,7 +165,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         pixelClock.tick();
         pixelDate.setText(new java.text.SimpleDateFormat("EEEE, d. MMMM", java.util.Locale.GERMAN).format(now.getTime()));
         greeting.setText(greetingFor(now.get(java.util.Calendar.HOUR_OF_DAY)));
-        if (sound != null && now.get(java.util.Calendar.SECOND) == 0) sound.startMusic(mascot.isSleeping());
+        if (sound != null && now.get(java.util.Calendar.SECOND) == 0) {
+            sound.startMusic(mascot.isSleeping());
+            if (mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
+        }
     }
 
     private void applyWallpaper() {
@@ -192,7 +195,10 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         main.post(weatherTick);
         main.removeCallbacks(clockTick);
         if (abend) main.post(clockTick);
-        if (sound != null) sound.startMusic(mascot.isSleeping());
+        if (sound != null) {
+            sound.startMusic(mascot.isSleeping());
+            if (mascot.isSleeping()) sound.stopEngine(); else sound.startEngine();
+        }
     }
 
     @Override
@@ -200,7 +206,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
         super.onPause();
         main.removeCallbacks(weatherTick);
         main.removeCallbacks(clockTick);
-        if (sound != null) sound.pauseMusic(); // Netflix & Co. bekommen Ruhe
+        if (sound != null) { sound.pauseMusic(); sound.stopEngine(); } // Netflix & Co. bekommen Ruhe
     }
 
     @Override
@@ -323,6 +329,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                     if (sound != null) {
                         sound.setEnabled(prefs.soundOn());
                         sound.startMusic(mascot != null && mascot.isSleeping());
+                        if (prefs.soundOn() && mascot != null && !mascot.isSleeping()) sound.startEngine();
                     }
                 })
                 .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()), this::chooseIconStyle)

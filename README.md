@@ -40,7 +40,9 @@ kurze Sprüche in Pixel-Schrift („Los geht's!“, „Autsch!“, „Level 3!�
 Die **Laufbahn baut sich auf und ab**: rechts fallen die Steine von oben an ihren Platz, links bröckeln
 sie weg. Dahinter ein **Pixel-Himmel** über die ganze Startansicht (`SkyLayer`): Wolken, Vogelschwärme,
 Flugzeuge mit Kondensstreifen, ein Heißluftballon, tagsüber eine Sonne, abends Mond, Sternschnuppen und
-Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps.
+Glühwürmchen – dezent, ~20 Bilder/s, pausiert hinter anderen Apps. Hinter Pixel fährt ein kleines
+**Pixel-Auto** (eigene Figur) her: drehende Räder, Rauch aus dem Auspuff, hüpft über Hindernisse, rückt
+näher, wenn Pixel stolpert, und brummt ganz leise (`sfx_engine.wav`, ebenfalls selbst erzeugt).
 **App-Symbole** lassen sich einheitlich darstellen (alle Stile außer Original ohne Kachel-Hintergrund, mit orangem Leuchten direkt um das Symbol) (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).

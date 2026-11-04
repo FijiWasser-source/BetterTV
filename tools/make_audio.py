@@ -190,6 +190,23 @@ def sfx_land():
         s.append((nz() * 0.8 + math.sin(2 * math.pi * 140 * t) * 0.4) * math.exp(-t * 40) * min(1, t / 0.002))
     return s
 
+def sfx_engine():
+    # leises, tiefes Brummen eines kleinen Motors; genau 0,5 s -> nahtlos als Schleife
+    n = int(0.5 * SR); s = []; nz = Noise(0.05)
+    fire = 24.0  # Zündungen pro Sekunde (ganzzahlig in 0,5 s -> nahtlos)
+    for i in range(n):
+        t = i / SR
+        ph = (t * fire) % 1
+        pulse = math.exp(-ph * 9)                       # "Tuckern"
+        tone = math.sin(2 * math.pi * 48 * t) * 0.6 + math.sin(2 * math.pi * 96 * t) * 0.25
+        s.append((tone * (0.55 + 0.45 * pulse) + nz() * 0.5 * pulse))
+    # Anfang/Ende angleichen
+    fade = int(0.01 * SR)
+    for i in range(fade):
+        k = i / fade; s[i] = s[i] * k + s[n - fade + i] * (1 - k)
+    return s[:n - fade]
+
+write(out + "/sfx_engine.wav", sfx_engine(), 0.3)
 write(out + "/sfx_jump.wav", sfx_jump(), 0.35)
 write(out + "/sfx_talk.wav", sfx_talk(), 0.3)
 write(out + "/sfx_levelup.wav", sfx_levelup(), 0.4)

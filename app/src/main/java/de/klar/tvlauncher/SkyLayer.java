@@ -46,6 +46,7 @@ public class SkyLayer extends View {
     }
 
     private final Paint paint = new Paint();
+    private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG); // weicher Mondschein
     private final RectF rect = new RectF();
     private final Random rnd = new Random();
     private final List<Sprite> sprites = new ArrayList<>();
@@ -158,7 +159,16 @@ public class SkyLayer extends View {
         int w = getWidth(), h = getHeight();
 
         // Mond (abends/nachts) oder Sonne, zwischen Begrüßung und Uhr
-        if (evening()) { paint.setColor(0x47DCE6FF); draw(c, MOON, w * 0.5f, h * 0.07f, px * 1.3f); }
+        if (evening()) {
+            // heller Mond mit sanftem Schein
+            float mx = w * 0.5f, my = h * 0.07f, ms = px * 1.3f;
+            float cx = mx + 3 * ms, cy = my + 3.5f * ms, r = 10 * ms;
+            glow.setShader(new android.graphics.RadialGradient(cx, cy, r, 0x40DCE6FF, 0x00DCE6FF,
+                    android.graphics.Shader.TileMode.CLAMP));
+            c.drawCircle(cx, cy, r, glow);
+            paint.setColor(0xF2EEF3FF);
+            draw(c, MOON, mx, my, ms);
+        }
         else { paint.setColor(0x33FFD27A); draw(c, SUN, w * 0.5f, h * 0.07f, px * 1.3f); }
 
         for (Sprite s : sprites) {

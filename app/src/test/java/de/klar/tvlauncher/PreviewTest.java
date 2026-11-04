@@ -304,6 +304,7 @@ public class PreviewTest {
         for (long seed = 1; seed <= 3; seed++) {
             Mascot m = new Mascot(paparazzi.getContext());
             int stars = m.simulate(120, seed);
+            for (String l : m.stumbleLog) System.out.println("  Stolperer " + seed + ": " + l);
             System.out.println("Seed " + seed + ": Sterne=" + stars + " Hindernisse=" + m.obstaclesSpawned + " Stolperer=" + m.stumbles + " Plattform-Landungen=" + m.landings);
             org.junit.Assert.assertTrue("nutzt Plattformen", m.landings >= 2);
             org.junit.Assert.assertTrue("sammelt Sterne", stars >= 5);
