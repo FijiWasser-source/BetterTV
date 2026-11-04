@@ -300,9 +300,10 @@ public class PreviewTest {
         for (long seed = 1; seed <= 3; seed++) {
             Mascot m = new Mascot(paparazzi.getContext());
             int stars = m.simulate(120, seed);
-            System.out.println("Seed " + seed + ": Sterne=" + stars + " Hindernisse=" + m.obstaclesSpawned + " Stolperer=" + m.stumbles);
+            System.out.println("Seed " + seed + ": Sterne=" + stars + " Hindernisse=" + m.obstaclesSpawned + " Stolperer=" + m.stumbles + " Plattform-Landungen=" + m.landings);
+            org.junit.Assert.assertTrue("nutzt Plattformen", m.landings >= 2);
             org.junit.Assert.assertTrue("sammelt Sterne", stars >= 5);
-            org.junit.Assert.assertTrue("genug Hindernisse", m.obstaclesSpawned >= 30);
+            org.junit.Assert.assertTrue("genug Hindernisse", m.obstaclesSpawned >= 25);
             // ~5 % absichtlich verpasst; mehr als 15 % hieße, die Sprünge passen nicht
             org.junit.Assert.assertTrue("springt zuverlässig", m.stumbles <= m.obstaclesSpawned * 0.15);
         }

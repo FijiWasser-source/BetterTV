@@ -72,6 +72,17 @@ final class Sheet {
 
     void show() {
         dialog.show();
+        // Liste darf höchstens ~75 % der Bildschirmhöhe einnehmen, der Rest scrollt
+        android.view.View scroll = buttons.getParent() instanceof android.view.View ? (android.view.View) buttons.getParent() : null;
+        if (scroll != null) {
+            int max = Math.round(dialog.getContext().getResources().getDisplayMetrics().heightPixels * 0.62f);
+            scroll.measure(android.view.View.MeasureSpec.makeMeasureSpec(1, android.view.View.MeasureSpec.UNSPECIFIED),
+                    android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED));
+            if (buttons.getMeasuredHeight() > max || scroll.getMeasuredHeight() > max) {
+                scroll.getLayoutParams().height = max;
+                scroll.requestLayout();
+            }
+        }
         if (extra.getChildCount() == 0 && buttons.getChildCount() > 0) buttons.getChildAt(0).requestFocus();
     }
 }

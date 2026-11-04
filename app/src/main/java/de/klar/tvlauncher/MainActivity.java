@@ -117,6 +117,9 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             @Override public void onJump() { sound.jump(); }
             @Override public void onStar() { sound.star(); }
             @Override public void onBump() { sound.bump(); }
+            @Override public void onLand() { sound.land(); }
+            @Override public void onLevelUp(int level) { sound.levelUp(); }
+            @Override public void onTalk(String text) { sound.talk(text); }
         });
         continueButton = findViewById(R.id.continue_button);
         continueLabel = findViewById(R.id.continue_label);
@@ -215,8 +218,11 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
             if (event.getAction() == KeyEvent.ACTION_UP) { focusKey = null; focusDock(0); }
             return true;
         }
-        if (code == KeyEvent.KEYCODE_0 && mascot != null) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN) mascot.jump();
+        // Farbtasten (sonst kaum gebraucht) und 0: selbst spielen / springen
+        boolean colorKey = code == KeyEvent.KEYCODE_PROG_RED || code == KeyEvent.KEYCODE_PROG_GREEN
+                || code == KeyEvent.KEYCODE_PROG_YELLOW || code == KeyEvent.KEYCODE_PROG_BLUE || code == KeyEvent.KEYCODE_0;
+        if (colorKey && mascot != null) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) mascot.playerJump();
             return true;
         }
         if (code >= KeyEvent.KEYCODE_1 && code <= KeyEvent.KEYCODE_9) {
@@ -311,10 +317,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
     private void showSettings() {
         String city = prefs.city().isEmpty() ? "nicht gesetzt" : prefs.city();
         new Sheet(this, getString(R.string.settings))
-                .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)") + " – wechseln", () -> {
-                    prefs.setDesign(abend ? "glas" : "abend");
-                    recreate();
-                })
+                .button("Design: " + (abend ? "Abend" : "Glas (Hintergrundbild)"), this::chooseDesign)
                 .button("Musik & Sounds: " + (prefs.soundOn() ? "an" : "aus") + " – wechseln", () -> {
                     prefs.setSoundOn(!prefs.soundOn());
                     if (sound != null) {
@@ -322,12 +325,7 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                         sound.startMusic(mascot != null && mascot.isSleeping());
                     }
                 })
-                .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()) + " – wechseln", () -> {
-                    prefs.setIconStyle(IconStyle.next(prefs.iconStyle()));
-                    adapter.setIconStyle(prefs.iconStyle());
-                    if (abend) applyPillStyle();
-                    Toast.makeText(this, "App-Symbole: " + IconStyle.label(prefs.iconStyle()), Toast.LENGTH_SHORT).show();
-                })
+                .button("App-Symbole: " + IconStyle.label(prefs.iconStyle()), this::chooseIconStyle)
                 .button("Wetter-Ort: " + city, this::askCity)
                 .button("Handy-Fernbedienung", this::showRemoteInfo)
                 .button("Hintergrundbild", this::showWallpaperInfo)
@@ -359,6 +357,34 @@ public class MainActivity extends Activity implements TileAdapter.Listener {
                 prefs.setHidden(h);
                 reloadDock();
             });
+        }
+        sheet.button("Abbrechen", null).show();
+    }
+
+    /** Alle Designs auf einen Blick, das aktive ist markiert. */
+    private void chooseDesign() {
+        String current = prefs.design();
+        Sheet sheet = new Sheet(this, "Design wählen");
+        String[][] options = {{"abend", "Abend (Begrüßung, Pixel, Kacheln)"}, {"glas", "Glas (Hintergrundbild, Glas-Dock)"}};
+        for (String[] o : options) {
+            Runnable pick = () -> { if (!o[0].equals(prefs.design())) { prefs.setDesign(o[0]); recreate(); } };
+            if (o[0].equals(current)) sheet.primary("✓  " + o[1], pick); else sheet.button(o[1], pick);
+        }
+        sheet.button("Abbrechen", null).show();
+    }
+
+    /** Alle Symbol-Stile auf einen Blick, der aktive ist markiert. */
+    private void chooseIconStyle() {
+        String current = prefs.iconStyle();
+        Sheet sheet = new Sheet(this, "App-Symbole wählen");
+        for (String style : IconStyle.ALL) {
+            Runnable pick = () -> {
+                prefs.setIconStyle(style);
+                adapter.setIconStyle(style);
+                if (abend) applyPillStyle();
+            };
+            String label = IconStyle.label(style);
+            if (style.equals(current)) sheet.primary("✓  " + label, pick); else sheet.button(label, pick);
         }
         sheet.button("Abbrechen", null).show();
     }

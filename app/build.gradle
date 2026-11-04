@@ -11,8 +11,8 @@ android {
         applicationId 'de.klar.tvlauncher'
         minSdk 21
         targetSdk 35
-        versionCode 27
-        versionName "4.1"
+        versionCode 28
+        versionName "4.2"
     }
 
     buildTypes {

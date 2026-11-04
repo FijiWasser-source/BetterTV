@@ -160,7 +160,40 @@ def sfx_bump():
         s.append((math.sin(2 * math.pi * fr * t) * 0.9 + nz() * 0.6) * math.exp(-t * 14))
     return s
 
+def sfx_talk():
+    # ein kurzer "Plapper"-Laut; beim Sprechen mit wechselnder Tonhöhe abgespielt
+    n = int(0.07 * SR); s = []; ph = 0
+    for i in range(n):
+        t = i / SR
+        f = 520 * (1 + 0.15 * math.sin(2 * math.pi * 30 * t))
+        ph += f / SR
+        v = (1 if (ph % 1) < 0.35 else -1) * 0.5 + math.sin(2 * math.pi * ph) * 0.5
+        s.append(v * min(1, t / 0.004) * math.exp(-t * 32))
+    return s
+
+def sfx_levelup():
+    s = []; n = int(0.62 * SR)
+    notes = ((523.3, 0.0), (659.3, 0.11), (784.0, 0.22), (1046.5, 0.33))
+    for i in range(n):
+        t = i / SR; v = 0
+        for f0, st in notes:
+            if t >= st:
+                tt = t - st; ph = f0 * tt
+                v += (1 if (ph % 1) < 0.5 else -1) * 0.35 * math.exp(-tt * 7) * min(1, tt / 0.004)
+        s.append(v)
+    return s
+
+def sfx_land():
+    n = int(0.09 * SR); s = []; nz = Noise(0.3)
+    for i in range(n):
+        t = i / SR
+        s.append((nz() * 0.8 + math.sin(2 * math.pi * 140 * t) * 0.4) * math.exp(-t * 40) * min(1, t / 0.002))
+    return s
+
 write(out + "/sfx_jump.wav", sfx_jump(), 0.35)
+write(out + "/sfx_talk.wav", sfx_talk(), 0.3)
+write(out + "/sfx_levelup.wav", sfx_levelup(), 0.4)
+write(out + "/sfx_land.wav", sfx_land(), 0.25)
 write(out + "/sfx_star.wav", sfx_star(), 0.5)
 write(out + "/sfx_bump.wav", sfx_bump(), 0.45)
 print("fertig:", out)

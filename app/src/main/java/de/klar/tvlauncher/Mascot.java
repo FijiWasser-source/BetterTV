@@ -43,6 +43,9 @@ public class Mascot extends View {
         void onJump();
         void onStar();
         void onBump();
+        default void onLand() {}
+        default void onLevelUp(int level) {}
+        default void onTalk(String text) {}
     }
 
     private Events events;
@@ -75,11 +78,13 @@ public class Mascot extends View {
     private static final float GROUND_FROM_BOTTOM = 6f;
 
     static final class Thing {
-        final int type; // 0 Stein (3×2), 1 Kiste (3×3), 2 Block (2×4), 3 Stern
-        float x; final float y; boolean gone, hit, miss;
+        final int type; // 0 Stein (3×2), 1 Kiste (3×3), 2 Block (2×4), 3 Stern, 4 Plattform
+        float x; final float y; boolean gone, hit, miss; float len = 12;
         Thing(int type, float x, float y) { this.type = type; this.x = x; this.y = y; }
-        float w() { return type == 0 ? 3 : type == 1 ? 3 : type == 2 ? 2 : 5 * 0.8f; }
-        float h() { return type == 0 ? 2 : type == 1 ? 3 : type == 2 ? 4 : 5 * 0.8f; }
+        float w() { return type == 0 ? 3 : type == 1 ? 3 : type == 2 ? 2 : type == 4 ? len : 5 * 0.8f; }
+        float h() { return type == 0 ? 2 : type == 1 ? 3 : type == 2 ? 4 : type == 4 ? 1.5f : 5 * 0.8f; }
+        /** Oberkante einer Plattform (Höhe, auf der man steht). */
+        float top() { return y + 1.5f; }
     }
 
     private final Paint paint = new Paint(); // bewusst ohne Kantenglättung: echte Pixel
@@ -96,7 +101,13 @@ public class Mascot extends View {
     private boolean airborne;
     private float stumble;           // Sekunden, die Pixel noch durchgeschüttelt ist
     private int stars;
-    int stumbles, obstaclesSpawned; // für den Test
+    int stumbles, obstaclesSpawned, landings; // für den Test
+    private float floor;             // aktuelle Standhöhe (0 = Boden, sonst Plattform)
+    private boolean manual;          // Spieler steuert selbst (Farbtasten)
+    private long lastInput;
+    private int level = 1;
+    private String speech; private long speechStart, nextChatter;
+    private static final long MANUAL_TIMEOUT = 20000;
     private long nextBlink, blinkUntil;
     private long nextEmote, emoteStart; private boolean emoteOn;
     private Emote emote = Emote.NONE;
@@ -112,6 +123,7 @@ public class Mascot extends View {
         start = lastFrame = now;
         nextBlink = now + 2500;
         nextEmote = now + 12000;
+        nextChatter = now + 6000;
     }
 
     /** Taste 0: Pixel springt selbst. */
@@ -122,8 +134,38 @@ public class Mascot extends View {
         }
     }
 
+    /** Farbtasten / Taste 0: Spieler übernimmt und springt. */
+    public void playerJump() {
+        if (night()) return;
+        long now = SystemClock.uptimeMillis();
+        if (!manual) { manual = true; say("Du spielst!"); }
+        lastInput = now;
+        jump();
+    }
+
+    public boolean isManual() { return manual; }
+
+    /** Kurzer Spruch in einer Sprechblase. */
+    public void say(String text) {
+        speech = text;
+        speechStart = SystemClock.uptimeMillis();
+        if (events != null && forceNight == null) events.onTalk(text);
+    }
+
     /** Kleine Freude, z. B. wenn eine App gestartet wird. */
-    public void cheer() { jump(); showEmote(Emote.STAR); }
+    public void cheer() { jump(); say("Viel Spaß!"); }
+
+    private static final String[] CHATTER = {
+            "Los geht's!", "Hui!", "Sterne sammeln!", "Pixel-Power!", "Ich renn für dich!",
+            "Schöner Tag heute!", "Hopp hopp!", "Wer hat Lust zu spielen?", "Farbtaste drücken!"};
+
+    private String chatterLine() {
+        int h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if (h >= 5 && h < 10 && rnd.nextInt(3) == 0) return "Guten Morgen!";
+        if (h >= 21 && rnd.nextInt(3) == 0) return rnd.nextBoolean() ? "Noch eine Folge?" : "Gleich Schlafenszeit!";
+        if (h >= 17 && h < 21 && rnd.nextInt(4) == 0) return "Schöner Abend!";
+        return CHATTER[rnd.nextInt(CHATTER.length)];
+    }
 
     /** Früher: Blick zur Kachel. Beim Rennen schaut Pixel nach vorn – bleibt als leere Methode. */
     public void lookAt(float dir) {}
@@ -135,7 +177,7 @@ public class Mascot extends View {
         for (float t = 0; t < seconds; t += 1f / 30) {
             now += 33;
             step(1f / 30, now, false, 120);
-            if (Float.isNaN(jumpY) || jumpY < 0 || things.size() > 40) throw new IllegalStateException("Spielzustand kaputt");
+            if (Float.isNaN(jumpY) || jumpY < 0 || things.size() > 50) throw new IllegalStateException("Spielzustand kaputt");
         }
         return stars;
     }
@@ -149,7 +191,9 @@ public class Mascot extends View {
         things.add(new Thing(3, HERO_X + 32, 16));
         things.add(new Thing(0, HERO_X + 44, 0));
         things.add(new Thing(2, HERO_X + 62, 0));
-        jumpY = 6; stars = 7;
+        Thing pf = new Thing(4, HERO_X + 26, 6); pf.len = 14; things.add(pf);
+        jumpY = 6; stars = 7; level = 2;
+        if (e == Emote.HEART) { speech = "Los geht's!"; speechStart = SystemClock.uptimeMillis(); }
         invalidate();
     }
 
@@ -187,12 +231,16 @@ public class Mascot extends View {
     private void step(float dt, long now, boolean sleeping, float trackCells) {
         if (now >= nextBlink && !sleeping) { blinkUntil = now + 140; nextBlink = now + 2500 + rnd.nextInt(3500); }
         if (sleeping) {
+            manual = false;
             if (!emoteOn || now - emoteStart > 2600) showEmote(Emote.SLEEP);
             return;
         }
         if (now >= nextEmote) { showEmote(rnd.nextBoolean() ? Emote.NOTE : Emote.QUESTION); nextEmote = now + 20000 + rnd.nextInt(20000); }
+        if (now >= nextChatter) { say(chatterLine()); nextChatter = now + 25000 + rnd.nextInt(20000); }
+        if (manual && now - lastInput > MANUAL_TIMEOUT) { manual = false; say("Ich übernehme!"); }
 
-        float speed = stumble > 0 ? SPEED * 0.3f : SPEED;
+        float speed = SPEED * Math.min(1.5f, 1 + 0.07f * (level - 1));
+        if (stumble > 0) speed *= 0.3f;
         stumble = Math.max(0, stumble - dt);
         float dx = speed * dt;
         scroll += dx;
@@ -200,13 +248,22 @@ public class Mascot extends View {
         // neue Dinge am rechten Rand der Bahn
         nextSpawn -= dx;
         if (nextSpawn <= 0) {
-            int t = rnd.nextInt(10);
-            int type = t < 4 ? 0 : t < 6 ? 1 : t < 7 ? 2 : 3;
-            Thing th = new Thing(type, trackCells, type == 3 ? 14 + rnd.nextInt(5) : 0);
-            th.miss = type != 3 && rnd.nextInt(100) < 5; // ganz selten verpasst er den Absprung
-            things.add(th);
-            if (type != 3) obstaclesSpawned++;
-            nextSpawn = 16 + rnd.nextInt(22);
+            int t = rnd.nextInt(20);
+            if (t < 3) { // Plattform in einer von zwei Höhen, oft mit Stern darüber
+                Thing pf = new Thing(4, trackCells, rnd.nextBoolean() ? 6 : 9.5f);
+                pf.len = 10 + rnd.nextInt(7);
+                things.add(pf);
+                if (rnd.nextInt(3) > 0) things.add(new Thing(3, trackCells + pf.len / 2, pf.top() + 6 + rnd.nextInt(3)));
+                // genug Abstand: wer von der Plattform fällt, braucht danach Anlauf zum nächsten Sprung
+                nextSpawn = pf.len + 24 + rnd.nextInt(12);
+            } else {
+                int type = t < 10 ? 0 : t < 14 ? 1 : t < 16 ? 2 : 3;
+                Thing th = new Thing(type, trackCells, type == 3 ? 14 + rnd.nextInt(5) : 0);
+                th.miss = type != 3 && rnd.nextInt(100) < 5; // ganz selten verpasst er den Absprung
+                things.add(th);
+                if (type != 3) obstaclesSpawned++;
+                nextSpawn = 16 + rnd.nextInt(22);
+            }
         }
         for (Iterator<Thing> it = things.iterator(); it.hasNext(); ) {
             Thing th = it.next();
@@ -214,25 +271,56 @@ public class Mascot extends View {
             if (th.x + th.w() < 0 || th.gone) it.remove();
         }
 
-        // automatisch springen: Abstand von der Körpervorderkante bis zum Ding
-        if (!airborne) {
+        float heroL = HERO_X + HERO_L_OFF, heroR = HERO_R;
+
+        // automatisch springen (nur solange der Spieler nicht selbst steuert)
+        if (!airborne && !manual) {
             for (Thing th : things) {
-                float gap = th.x - HERO_R;
-                boolean window = th.type == 3 ? gap > 0.5f && gap < 3f : gap > 1.8f && gap < 2.8f;
-                if (window && !th.miss) { jump(); break; }
+                float gap = th.x - heroR;
+                boolean window;
+                if (th.type == 4) {
+                    float rise = th.top() - jumpY;
+                    window = rise > 0.5f && rise < 10.5f && gap > 1.2f && gap < 3.2f;
+                } else if (th.type == 3) {
+                    float rel = th.y - jumpY;
+                    window = rel > 2 && rel < 20 && gap > 0.5f && gap < 3f;
+                } else {
+                    window = floor == 0 && gap > 1.8f && gap < 2.8f && !th.miss;
+                }
+                if (window) { jump(); break; }
             }
         }
 
-        // Sprungphysik
+        // Sprungphysik mit Plattformen
         if (airborne) {
+            float prev = jumpY;
             vy -= GRAVITY * dt;
             jumpY += vy * dt;
-            if (jumpY <= 0) { jumpY = 0; vy = 0; airborne = false; }
+            if (vy < 0) {
+                for (Thing th : things) {
+                    if (th.type != 4) continue;
+                    boolean overX = th.x < heroR - 1 && th.x + th.w() > heroL + 1;
+                    if (overX && prev >= th.top() - 0.01f && jumpY <= th.top()) {
+                        jumpY = th.top(); floor = th.top(); vy = 0; airborne = false; landings++;
+                        if (events != null) events.onLand();
+                        break;
+                    }
+                }
+            }
+            if (airborne && jumpY <= 0) { jumpY = 0; floor = 0; vy = 0; airborne = false; }
+        } else if (floor > 0) {
+            // noch auf der Plattform? Sonst herunterfallen
+            boolean onIt = false;
+            for (Thing th : things) {
+                if (th.type == 4 && Math.abs(th.top() - floor) < 0.01f && th.x < heroR - 1 && th.x + th.w() > heroL + 1) onIt = true;
+            }
+            if (!onIt) { airborne = true; vy = 0; floor = 0; }
         }
 
         // Treffer: Hindernis -> Stolpern, Stern -> einsammeln
-        float heroL = HERO_X + HERO_L_OFF, heroR = HERO_R, feet = jumpY, head = jumpY + 12;
+        float feet = jumpY, head = jumpY + 12;
         for (Thing th : things) {
+            if (th.type == 4) continue;
             boolean overlapX = th.x < heroR && th.x + th.w() > heroL;
             if (!overlapX) continue;
             if (th.type == 3) {
@@ -241,12 +329,21 @@ public class Mascot extends View {
                     stars++;
                     showEmote(stars % 10 == 0 ? Emote.HEART : Emote.STAR);
                     if (events != null) events.onStar();
+                    int newLevel = 1 + stars / 20;
+                    if (newLevel > level) {
+                        level = newLevel;
+                        say("Level " + level + "!");
+                        if (events != null) events.onLevelUp(level);
+                    } else if (stars % 5 == 0) {
+                        say(rnd.nextBoolean() ? "Stark!" : stars + " Sterne!");
+                    }
                 }
             } else if (!th.hit && feet < th.h() - 0.3f) {
                 th.hit = true; // pro Hindernis höchstens einmal stolpern
                 stumble = 0.9f;
                 stumbles++;
                 showEmote(Emote.BANG);
+                say(rnd.nextBoolean() ? "Autsch!" : "Hoppla!");
                 if (events != null) events.onBump();
                 vy = 14; airborne = true; // kleiner Hüpfer beim Stolpern
             }
@@ -262,6 +359,7 @@ public class Mascot extends View {
         if (forceNight == null) step(dt, now, sleeping, trackCells);
 
         float ground = getHeight() - GROUND_FROM_BOTTOM * cell;
+        drawBackdrop(canvas, ground);
         drawTrack(canvas, ground, sleeping);
 
         // Dinge auf der Bahn (nur innerhalb der Bahn sichtbar)
@@ -279,21 +377,75 @@ public class Mascot extends View {
         float oy = ground - 12 * cell - jumpY * cell - bob + sit;
 
         // Schatten (wird beim Springen kleiner)
-        float sw = 12 * cell * Math.max(0.3f, 1 - jumpY / 14f);
-        rect.set(ox + 7 * cell - sw / 2, ground - cell * 0.5f, ox + 7 * cell + sw / 2, ground + cell * 0.6f);
+        float shadowY = ground - shadowFloor() * cell;
+        float sw = 12 * cell * Math.max(0.3f, 1 - (jumpY - shadowFloor()) / 14f);
+        rect.set(ox + 7 * cell - sw / 2, shadowY - cell * 0.5f, ox + 7 * cell + sw / 2, shadowY + cell * 0.6f);
         canvas.drawOval(rect, soft);
 
         drawHero(canvas, ox + shake, oy, now, t, sleeping);
 
-        // Sternzähler in Pixel-Schrift
+        // Sternzähler, Level und Spieler-Anzeige in Pixel-Schrift
         paint.setColor(0xFFFFC24A);
         drawIcon(canvas, STAR, cell * 2.5f, ground - cell * 4.2f, cell * 0.7f);
         paint.setColor(0xFFD7DAE0);
-        PixelText.draw(canvas, String.valueOf(stars), cell * 7f, ground - cell * 4.2f, cell * 0.5f, paint);
+        String count = String.valueOf(stars);
+        PixelText.draw(canvas, count, cell * 7f, ground - cell * 4.2f, cell * 0.5f, paint);
+        float hudX = cell * 7f + PixelText.measure(count, cell * 0.5f) + cell * 2.5f;
+        paint.setColor(0xFF8FB4FF);
+        PixelText.draw(canvas, "LV " + level, hudX, ground - cell * 4.2f, cell * 0.5f, paint);
+        if (manual) {
+            paint.setColor(0xFFFF8A1F);
+            PixelText.draw(canvas, "DU SPIELST", getWidth() - cell * 2.5f - PixelText.measure("DU SPIELST", cell * 0.5f),
+                    ground - cell * 4.2f, cell * 0.5f, paint);
+        }
 
-        drawEmote(canvas, now, ox + 14 * cell + cell * 0.5f, oy - cell * 2.5f);
+        if (!drawSpeech(canvas, now, ox + 14 * cell, oy - cell * 2f)) {
+            drawEmote(canvas, now, ox + 14 * cell + cell * 0.5f, oy - cell * 2.5f);
+        }
 
         if (running) postInvalidateDelayed(33); // ~30 Bilder/s reichen und schonen den TV
+    }
+
+    /** Hügel und Wolken, die langsamer vorbeiziehen (Tiefe). */
+    private void drawBackdrop(Canvas c, float ground) {
+        float left = cell, right = getWidth() - cell;
+        // ferne Hügel (Treppen-Silhouette, sehr dezent)
+        paint.setColor(0x14FFFFFF);
+        float far = scroll * 0.25f;
+        for (float x = left; x < right; x += cell) {
+            double u = (x / cell + far) / 9.0;
+            int hgt = (int) Math.round(3 + 2.2 * Math.sin(u) + 1.3 * Math.sin(u * 2.7 + 1));
+            rect.set(x, ground - hgt * cell, x + cell + 0.5f, ground);
+            c.drawRect(rect, paint);
+        }
+        // Wolken
+        paint.setColor(0x1FFFFFFF);
+        float span = right - left, drift = (scroll * 0.12f * cell) % span;
+        for (int k = 0; k < 3; k++) {
+            float cx = left + ((k * span / 3f - drift) % span + span) % span;
+            float cy = ground - (16 + k * 4) * cell;
+            rect.set(cx, cy, cx + 6 * cell, cy + cell); c.drawRect(rect, paint);
+            rect.set(cx + cell, cy - cell, cx + 4 * cell, cy); c.drawRect(rect, paint);
+        }
+    }
+
+    /** Sprechblase mit Pixel-Text. @return true, wenn gerade gesprochen wird */
+    private boolean drawSpeech(Canvas c, long now, float x, float y) {
+        if (speech == null || (forceNight == null && now - speechStart > 2600)) return false;
+        float gc = cell * 0.45f;
+        float tw = PixelText.measure(speech, gc), th = 7 * gc;
+        float pad = cell * 1.2f;
+        float bw = tw + 2 * pad, bh = th + 2 * pad;
+        float bx = Math.min(getWidth() - bw - cell, x), by = Math.max(cell * 0.5f, y - bh);
+        soft.setColor(BUBBLE);
+        rect.set(bx, by, bx + bw, by + bh);
+        c.drawRoundRect(rect, cell * 1.6f, cell * 1.6f, soft);
+        rect.set(bx + cell, by + bh - cell * 0.2f, bx + cell * 2.2f, by + bh + cell);
+        c.drawRect(rect, soft);
+        soft.setColor(0x4D000000);
+        paint.setColor(0xFF1B2640);
+        PixelText.draw(c, speech, bx + pad, by + pad, gc, paint);
+        return true;
     }
 
     private void drawTrack(Canvas c, float ground, boolean sleeping) {
@@ -319,6 +471,15 @@ public class Mascot extends View {
 
     private void drawThing(Canvas c, Thing th, float ground) {
         float x = th.x * cell;
+        if (th.type == 4) { // schwebende Plattform im Stil der Bahn
+            float top = ground - th.top() * cell, w = th.w() * cell;
+            paint.setColor(0x33000000);
+            rect.set(x + cell, top + 2 * cell, x + w - cell, top + 2.6f * cell); c.drawRect(rect, paint);
+            paint.setColor(0xFFA3A7AE); rect.set(x, top, x + w, top + cell * 0.6f); c.drawRect(rect, paint);
+            paint.setColor(0xFF868A92); rect.set(x, top + cell * 0.6f, x + w, top + cell * 1.1f); c.drawRect(rect, paint);
+            paint.setColor(0xFF4A4D54); rect.set(x + cell * 0.5f, top + cell * 1.1f, x + w - cell * 0.5f, top + cell * 1.5f); c.drawRect(rect, paint);
+            return;
+        }
         if (th.type == 3) {
             float bobS = (float) Math.sin((SystemClock.uptimeMillis() - start) / 300.0 + th.x) * cell * 0.4f;
             paint.setColor(0xFFFFC24A);
@@ -406,6 +567,15 @@ public class Mascot extends View {
         rect.set(ox + 2.4f * cell, ey + 2.4f * cell, ox + 3.6f * cell, ey + 3f * cell); c.drawOval(rect, soft);
         rect.set(ox + 11.6f * cell, ey + 2.4f * cell, ox + 12.8f * cell, ey + 3f * cell); c.drawOval(rect, soft);
         soft.setColor(0x4D000000);
+    }
+
+    /** Höchste Fläche unter der Figur (für den Schatten). */
+    private float shadowFloor() {
+        float best = 0, heroL = HERO_X + HERO_L_OFF;
+        for (Thing th : things) {
+            if (th.type == 4 && th.top() <= jumpY + 0.01f && th.x < HERO_R - 1 && th.x + th.w() > heroL + 1) best = Math.max(best, th.top());
+        }
+        return best;
     }
 
     private boolean emoteActive(long now) {

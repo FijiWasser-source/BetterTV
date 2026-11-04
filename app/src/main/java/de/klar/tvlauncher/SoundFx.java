@@ -16,7 +16,9 @@ final class SoundFx {
 
     private final Context context;
     private SoundPool pool;
-    private int jump, star, bump;
+    private int jump, star, bump, talk, levelUp, land;
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final java.util.Random rnd = new java.util.Random();
     private MediaPlayer music;
     private boolean enabled;
 
@@ -40,11 +42,30 @@ final class SoundFx {
         jump = pool.load(context, R.raw.sfx_jump, 1);
         star = pool.load(context, R.raw.sfx_star, 1);
         bump = pool.load(context, R.raw.sfx_bump, 1);
+        talk = pool.load(context, R.raw.sfx_talk, 1);
+        levelUp = pool.load(context, R.raw.sfx_levelup, 1);
+        land = pool.load(context, R.raw.sfx_land, 1);
     }
 
     void jump() { play(jump, 0.6f); }
     void star() { play(star, 1f); }
     void bump() { play(bump, 0.9f); }
+    void land() { play(land, 0.7f); }
+    void levelUp() { play(levelUp, 1f); }
+
+    /** Plapper-Laute zum Spruch: eine Silbe je zwei Buchstaben, Tonhöhe leicht wechselnd. */
+    void talk(String text) {
+        if (!enabled) return;
+        ensurePool();
+        int syllables = Math.min(9, Math.max(2, text.replace(" ", "").length() / 2));
+        for (int i = 0; i < syllables; i++) {
+            handler.postDelayed(() -> {
+                if (!enabled || pool == null) return;
+                float v = FX_VOLUME * 0.55f;
+                pool.play(talk, v, v, 1, 0, 0.85f + rnd.nextFloat() * 0.5f);
+            }, i * 75L);
+        }
+    }
 
     private void play(int id, float vol) {
         if (!enabled) return;
@@ -73,6 +94,7 @@ final class SoundFx {
     }
 
     void release() {
+        handler.removeCallbacksAndMessages(null);
         if (music != null) { music.release(); music = null; }
         if (pool != null) { pool.release(); pool = null; }
     }

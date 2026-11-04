@@ -32,14 +32,18 @@ Pixel-Schrift, grauer Hintergrund mit Punkteraster (wie Dot-Grid-Papier), nummer
 zuletzt geöffnete App. **Zifferntasten 1–9** der Fernbedienung starten die jeweilige Kachel.
 In der Mitte läuft **Pixel**, ein kleines Maskottchen (eigene Figur), in einem Endlos-Jump-and-Run:
 rennt über eine Pixel-Laufbahn, springt automatisch über Steine, Kisten und Blöcke, sammelt
-Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. **Taste 0** lässt ihn springen.
+Sterne (Zähler über der Bahn), stolpert selten und schläft nachts. Dazu **schwebende Plattformen**
+in zwei Höhen, Hügel und Wolken im Hintergrund (Parallax) und **Level**: alle 20 Sterne wird es etwas
+schneller. **Selbst spielen:** eine der **Farbtasten** (rot/grün/gelb/blau) oder **0** drücken – dann
+steuerst du (jeder Druck = Sprung), nach 20 s ohne Eingabe übernimmt Pixel wieder. Pixel **spricht**
+kurze Sprüche in Pixel-Schrift („Los geht's!“, „Autsch!“, „Level 3!“, „Viel Spaß!“) mit Plapper-Lauten.
 **App-Symbole** lassen sich einheitlich darstellen (*Einstellungen → App-Symbole*): Original,
 Dunkel (helles Logo auf dunklem Grund), Orange oder Blau getönt, Glas Blau und Glas Orange (nur das Logo als Glas frei auf dem Hintergrund, mit orangem Leuchten entlang der Logo-Form, ohne Kachel und ohne Namen) – nur innerhalb von Klar und
 der Handy-Fernbedienung; ob ein Banner umgedreht wird, entscheidet sein Rand (= Hintergrund).
 **Musik & Sounds:** ein ruhiger, selbst erzeugter Lo-Fi-Loop und Retro-Effekte für Pixel (Sprung,
 Stern, Stolpern) – alles per `tools/make_audio.py` synthetisiert, keine fremden Aufnahmen. Läuft leise,
 nur solange die Startansicht sichtbar ist, nachts aus; abschaltbar unter *Einstellungen → Musik & Sounds*.
-Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design*.
+Umschalten zwischen „Abend“ und „Glas“: *Einstellungen → Design* (Auswahlliste, aktives Design markiert).
 
 ![Abend](app/src/test/snapshots/images/de.klar.tvlauncher_PreviewTest_abend_abend.png)
 

@@ -64,6 +64,9 @@ public class PixelText extends View {
         g('-', "0000", "0000", "0000", "1111", "0000", "0000", "0000");
         g('·', "0", "0", "0", "1", "0", "0", "0");
         g(' ', "00", "00", "00", "00", "00", "00", "00");
+        g('!', "1", "1", "1", "1", "1", "0", "1");
+        g('?', "01110", "10001", "00001", "00110", "00100", "00000", "00100");
+        g('\'', "1", "1", "0", "0", "0", "0", "0");
     }
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -144,6 +147,14 @@ public class PixelText extends View {
             }
             x += g[0].length() * cell + cell;
         }
+    }
+
+    /** Breite eines Textes in Pixel-Schrift. */
+    static float measure(String text, float cell) {
+        String up = text.toUpperCase(Locale.GERMAN);
+        float w = 0;
+        for (int i = 0; i < up.length(); i++) w += glyph(up.charAt(i))[0].length() * cell + cell;
+        return Math.max(0, w - cell);
     }
 
     /** Zeichnet Text in Pixel-Schrift direkt auf eine Zeichenfläche (z. B. für das Mini-Spiel). */

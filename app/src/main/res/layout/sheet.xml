@@ -44,11 +44,21 @@
             android:layout_marginTop="16dp"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:id="@+id/sheet_buttons"
+        <ScrollView
+            android:id="@+id/sheet_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:orientation="vertical" />
+            android:fadingEdgeLength="24dp"
+            android:requiresFadingEdge="vertical"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/sheet_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="6dp" />
+        </ScrollView>
     </LinearLayout>
 </de.klar.tvlauncher.GlassLayout>
