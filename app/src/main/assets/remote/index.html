@@ -13,25 +13,26 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-  /* Farbschema Midnight. Glas nur auf Bedienelementen; Hintergrundbild = Inhalt. */
+  /* Design "Abend" wie am Fernseher: Grau mit Punkteraster, Blau #8FB4FF, Orange als Akzent */
+  @font-face { font-family: "KlarRound"; src: url("Nunito-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
   :root {
-    --bg: #0B1017;
-    --midnight: #2E3642;
-    --glass: rgba(23, 29, 39, 0.42);
-    --glass-strong: rgba(23, 29, 39, 0.62);
-    --fill: rgba(255, 255, 255, 0.14);
-    --fill-press: rgba(255, 255, 255, 0.32);
-    --rim: rgba(255, 255, 255, 0.22);
+    --bg-top: #383B41; --bg-mid: #2C2F34; --bg-bottom: #222428;
+    --blue: #8FB4FF; --blue-hi: #9CBDFF; --blue-lo: #82A9F5;
+    --ink: #1B2640; --ink-soft: #3D5788;
+    --orange: #FF8A1F;
     --text: #FFFFFF;
-    --accent: #0A84FF;
-    --danger: #FF453A;
-    --r-panel: 34px;
+    --r-tile: 16px;
     --gap: 14px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: var(--bg);
+    background-color: var(--bg-mid);
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,.2) 1.3px, transparent 1.6px),
+      linear-gradient(180deg, var(--bg-top), var(--bg-mid) 55%, var(--bg-bottom));
+    background-size: 26px 26px, 100% 100%;
+    background-attachment: fixed;
     color: var(--text);
     font: 17px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -39,17 +40,7 @@
     touch-action: manipulation;
     overflow: hidden;
   }
-  /* Inhaltsebene: dein Hintergrundbild vom Fernseher */
-  #wall {
-    position: fixed; inset: -40px; z-index: 0;
-    background: radial-gradient(120% 80% at 80% 10%, #2B4A73 0%, transparent 60%),
-                radial-gradient(120% 90% at 10% 100%, #2E3642 0%, transparent 60%), var(--bg);
-    background-size: cover; background-position: center;
-    filter: saturate(0.85) brightness(0.8);
-    transform: scale(1.05);
-  }
-  #wall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,16,23,.25), rgba(11,16,23,.6)); }
-
+  #wall { display: none; }
   main {
     position: relative; z-index: 1;
     height: 100%;
@@ -59,88 +50,86 @@
   }
   main[hidden] { display: none; }
 
-  /* Bedienebene: Glas */
-  .glass {
-    background: var(--glass);
-    -webkit-backdrop-filter: blur(28px) saturate(170%);
-    backdrop-filter: blur(28px) saturate(170%);
-    border: 1px solid var(--rim);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(0,0,0,.25), 0 12px 32px rgba(0,0,0,.35);
+  /* Blaue Fläche wie die Kacheln am TV */
+  .tile-blue, .glass {
+    background: linear-gradient(180deg, var(--blue-hi), var(--blue-lo));
+    color: var(--ink);
+    border: 1.5px solid rgba(255,255,255,.35);
+    box-shadow: 0 6px 18px rgba(0,0,0,.28);
   }
-  @media (prefers-reduced-transparency: reduce) {
-    .glass { background: var(--glass-strong); -webkit-backdrop-filter: none; backdrop-filter: none; background-color: #1C2430; }
-  }
+  .glow { box-shadow: 0 0 0 2.5px var(--orange), 0 0 18px 3px rgba(255,138,31,.65); }
 
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
-  header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
-  header p { margin: 2px 0 0; font-size: 15px; font-weight: 500; opacity: .9; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #30D158; margin-right: 6px; vertical-align: 1px; }
-  .dot.off { background: var(--danger); }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .greet { font-family: "KlarRound", -apple-system, sans-serif; font-weight: 800; font-size: 30px; line-height: 1.02; letter-spacing: -0.01em; margin: 0; }
+  .greet .l1 { color: var(--blue); display: block; }
+  .greet .l2 { color: #fff; display: block; }
+  .greet .accent { color: var(--orange); }
+  .side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  #clock { display: block; image-rendering: pixelated; }
+  .tv { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--blue); text-transform: uppercase; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #30D158; margin-right: 5px; vertical-align: 1px; }
+  .dot.off { background: #FF453A; }
 
   button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
-  button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-  svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  button:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+  svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 
-  .round { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; }
-  .pressable { transition: transform .12s ease, background-color .12s ease; }
-  .pressable.down, .pressable:active { transform: scale(.94); background-color: var(--fill-press); }
+  .round { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--ink); }
+  .pressable { transition: transform .12s ease, box-shadow .12s ease; }
+  .pressable.down, .pressable:active { transform: scale(.94); box-shadow: 0 0 0 2.5px var(--orange), 0 0 16px 3px rgba(255,138,31,.6); }
+  #btn-settings { width: 40px; height: 40px; }
 
-  /* Apps (Inhalt: Banner, kein Glas) */
-  .apps { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 6px; margin: 0 -2px; scrollbar-width: none; }
+  /* Apps: blaue Kacheln mit Nummer, Banner mit runden Ecken */
+  .apps { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 4px 10px; margin: 0 -4px; scrollbar-width: none; }
   .apps::-webkit-scrollbar { display: none; }
-  .app { flex: none; width: 112px; scroll-snap-align: start; text-align: center; }
-  .app .tile { width: 112px; height: 63px; border-radius: 14px; background: #1C2430 center/cover no-repeat; box-shadow: 0 6px 16px rgba(0,0,0,.35); display: grid; place-items: center; overflow: hidden; }
-  .app .tile.icon { background-size: 44px 44px; }
-  .app span { display: block; margin-top: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  .app { flex: none; width: 116px; scroll-snap-align: start; position: relative; border-radius: var(--r-tile); padding: 10px 9px 8px; text-align: center; }
+  .app .tile { width: 96px; height: 54px; margin: 6px auto 0; border-radius: 9px; background: #1C2430 center/cover no-repeat; overflow: hidden; }
+  .app .tile.icon { background-color: transparent; background-size: 44px 44px; }
+  .app span { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app .num { position: absolute; top: 5px; right: 9px; font-size: 11px; font-weight: 800; color: var(--ink-soft); }
+  .app.down .num, .app:active .num { color: var(--orange); }
   .section { display: flex; align-items: baseline; justify-content: space-between; }
-  .section h2 { margin: 0; font-size: 20px; font-weight: 700; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
-  .section button { font-size: 15px; font-weight: 600; padding: 6px 2px; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  .section h2 { margin: 0; font-family: "KlarRound", sans-serif; font-size: 20px; font-weight: 800; }
+  .section button { font-size: 15px; font-weight: 700; padding: 6px 2px; color: var(--blue); }
 
-  /* Touchpad wie bei der Siri Remote: wischen = Pfeile, tippen = OK */
+  /* Touchpad: blaue Scheibe, OK-Mitte etwas dunkler */
   .pad-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: var(--gap); min-height: 0; }
-  #pad {
-    position: relative; width: min(100%, 44vh); aspect-ratio: 1 / 1; margin: 0 auto; flex: none;
-    border-radius: 50%; touch-action: none;
-  }
-  /* Pfeile sind nur Markierungen; das Touchpad wertet Position und Wischen selbst aus */
-  #pad .arrow { position: absolute; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; opacity: .9; pointer-events: none; transition: background-color .12s; }
-  #pad .arrow.hit { background: var(--fill); }
-  #pad .arrow svg { width: 28px; height: 28px; }
+  #pad { position: relative; width: min(100%, 42vh); aspect-ratio: 1 / 1; margin: 0 auto; flex: none; border-radius: 50%; touch-action: none; }
+  #pad .arrow { position: absolute; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); pointer-events: none; transition: background-color .12s; }
+  #pad .arrow svg { width: 30px; height: 30px; stroke-width: 2.6; }
+  #pad .arrow.hit { background: rgba(255,138,31,.28); }
   #pad .up { top: 6px; left: 50%; margin-left: -32px; }
   #pad .down { bottom: 6px; left: 50%; margin-left: -32px; }
   #pad .left { left: 6px; top: 50%; margin-top: -32px; }
   #pad .right { right: 6px; top: 50%; margin-top: -32px; }
-  /* Mitte: Füllung auf dem Glas (kein Glas auf Glas) */
-  #pad .ok { pointer-events: none; position: absolute; inset: 30%; border-radius: 50%; background: var(--fill); display: grid; place-items: center; font-weight: 700; font-size: 19px; letter-spacing: .02em; }
-  #pad.flash .ok { background: var(--fill-press); }
-  #pad .ripple { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.5); transform: translate(-50%,-50%); pointer-events: none; opacity: 0; }
+  #pad .ok { pointer-events: none; position: absolute; inset: 30%; border-radius: 50%; background: rgba(27,38,64,.14); color: var(--ink); display: grid; place-items: center; font-family: "KlarRound", sans-serif; font-weight: 800; font-size: 21px; transition: box-shadow .12s, background-color .12s; }
+  #pad.flash .ok { background: rgba(255,138,31,.3); box-shadow: 0 0 0 2.5px var(--orange); }
+  #pad .ripple { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,138,31,.55); transform: translate(-50%,-50%); pointer-events: none; opacity: 0; }
 
   .row { display: flex; gap: 12px; justify-content: space-between; align-items: center; }
   .bar { border-radius: 999px; padding: 6px; display: flex; gap: 6px; align-items: center; }
   .bar .round { background: transparent; }
+  .bar .round.down, .bar .round:active { background: rgba(255,138,31,.25); box-shadow: none; }
   .wide { flex: 1; justify-content: space-around; }
-  .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-  /* Kopplung & Sheets */
-  .overlay { position: fixed; inset: 0; z-index: 5; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.4); padding: 16px 12px calc(env(safe-area-inset-bottom,0px) + 12px); }
+  /* Kopplung & Einstellungen */
+  .overlay { position: fixed; inset: 0; z-index: 5; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); padding: 16px 12px calc(env(safe-area-inset-bottom,0px) + 12px); }
   .overlay.show { display: flex; }
-  .sheet { width: 100%; max-width: 460px; border-radius: var(--r-panel); padding: 24px 18px 18px; }
-  .sheet h3 { margin: 0 0 6px; font-size: 22px; font-weight: 700; text-align: center; }
+  .sheet { width: 100%; max-width: 460px; border-radius: 30px; padding: 24px 18px 18px; background: #2C2F34; border: 1.5px solid rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.45); color: #fff; }
+  .sheet h3 { margin: 0 0 6px; font-family: "KlarRound", sans-serif; font-size: 24px; font-weight: 800; text-align: center; color: var(--blue); }
   .sheet p { margin: 0 0 16px; font-size: 16px; text-align: center; }
   .sheet ol { margin: 0 0 16px; padding-left: 22px; font-size: 15px; line-height: 1.45; }
-  /* konzentrisch: 34px Tafel − 18px Abstand = 16px */
-  .btn { display: block; width: 100%; height: 52px; border-radius: 16px; background: var(--fill); font-weight: 600; margin-top: 10px; }
-  .btn.primary { background: var(--accent); }
-  .btn:active { background: var(--fill-press); }
-  .btn.primary:active { filter: brightness(1.15); }
-  .field { width: 100%; height: 56px; border-radius: 16px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); color: #fff; font: 600 22px/1 inherit; text-align: center; letter-spacing: .3em; outline: none; }
-  .field:focus { border-color: #fff; background: rgba(255,255,255,.18); }
+  .btn { display: block; width: 100%; height: 52px; border-radius: 14px; font-weight: 700; margin-top: 10px; background: linear-gradient(180deg, var(--blue-hi), var(--blue-lo)); color: var(--ink); }
+  .btn.primary { background: var(--orange); color: #fff; }
+  .btn:active { box-shadow: 0 0 0 2.5px var(--orange), 0 0 16px 3px rgba(255,138,31,.6); }
+  .field { width: 100%; height: 56px; border-radius: 14px; border: 1.5px solid rgba(143,180,255,.5); background: rgba(143,180,255,.12); color: #fff; font: 700 22px/1 inherit; text-align: center; letter-spacing: .3em; outline: none; }
+  .field:focus { border-color: var(--orange); }
   .field.text { letter-spacing: .02em; font-size: 18px; }
-  .err { color: #FFB4AE; font-weight: 600; min-height: 22px; margin: 8px 0 0; text-align: center; font-size: 15px; }
-  .toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top,0px) + 12px); transform: translate(-50%, -16px); z-index: 6; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 15px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; max-width: 90%; text-align: center; }
-  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .err { color: #FFB4AE; font-weight: 700; min-height: 22px; margin: 8px 0 0; text-align: center; font-size: 15px; }
+  .toast { position: fixed; left: 50%; top: 52%; transform: translate(-50%, -40%); z-index: 6; padding: 12px 18px; border-radius: 999px; font-weight: 700; font-size: 15px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; max-width: 90%; text-align: center; }
+  .toast.show { opacity: 1; transform: translate(-50%, -50%); box-shadow: 0 0 0 2.5px var(--orange), 0 10px 30px rgba(0,0,0,.4); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-  @media (max-height: 700px) { #pad { width: min(100%, 38vh); } .app { width: 96px; } .app .tile { width: 96px; height: 54px; } }
+  @media (max-height: 700px) { #pad { width: min(100%, 36vh); } .greet { font-size: 26px; } }
 </style>
 </head>
 <body>
@@ -148,13 +137,14 @@
 
 <main id="remote" hidden>
   <header>
-    <div>
-      <h1>Klar</h1>
-      <p><span class="dot" id="dot"></span><span id="tvname">Fernseher</span></p>
+    <h1 class="greet" id="greet"><span class="l1">Guten Abend.</span><span class="l2">Was läuft <span class="accent">heute?</span></span></h1>
+    <div class="side">
+      <canvas id="clock" width="1" height="1" aria-hidden="true"></canvas>
+      <div class="tv"><span class="dot" id="dot"></span><span id="tvname">Fernseher</span></div>
+      <button class="round tile-blue pressable" id="btn-settings" aria-label="Einstellungen">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
     </div>
-    <button class="round glass pressable" id="btn-settings" aria-label="Einstellungen">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    </button>
   </header>
 
   <section>
@@ -163,7 +153,7 @@
   </section>
 
   <div class="pad-wrap">
-    <div id="pad" class="glass" role="group" aria-label="Touchpad: wischen zum Bewegen, tippen für OK">
+    <div id="pad" class="tile-blue" role="group" aria-label="Touchpad: wischen zum Bewegen, tippen für OK">
       <button class="arrow up" data-key="up" aria-label="Hoch"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
       <button class="arrow down" data-key="down" aria-label="Runter"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <button class="arrow left" data-key="left" aria-label="Links"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
@@ -173,7 +163,7 @@
     </div>
 
     <div class="row">
-      <div class="bar glass wide">
+      <div class="bar tile-blue wide">
         <button class="round pressable" data-key="back" aria-label="Zurück"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg></button>
         <button class="round pressable" data-key="home" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></button>
         <button class="round pressable" data-key="playpause" aria-label="Play/Pause"><svg viewBox="0 0 24 24"><path d="M6 5v14l8-7z" fill="currentColor" stroke="none"/><path d="M17 5v14M21 5v14"/></svg></button>
@@ -182,12 +172,12 @@
     </div>
 
     <div class="row">
-      <div class="bar glass">
+      <div class="bar tile-blue">
         <button class="round pressable" data-key="voldown" data-repeat aria-label="Leiser"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
         <button class="round pressable" data-key="mute" aria-label="Stumm"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg></button>
         <button class="round pressable" data-key="volup" data-repeat aria-label="Lauter"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
       </div>
-      <div class="bar glass">
+      <div class="bar tile-blue">
         <button class="round pressable" data-key="input" aria-label="Eingang wechseln"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
         <button class="round pressable" data-key="power" aria-label="Ausschalten"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.3 7a8 8 0 1 0 11.4 0"/></svg></button>
       </div>
@@ -197,7 +187,7 @@
 
 <!-- Koppeln -->
 <div class="overlay" id="pair">
-  <div class="sheet glass">
+  <div class="sheet">
     <h3>Mit Fernseher koppeln</h3>
     <p id="pair-text">Tippe auf „PIN anzeigen“. Die PIN erscheint dann auf dem Fernseher.</p>
     <input class="field" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••" aria-label="PIN" hidden>
@@ -208,7 +198,7 @@
 
 <!-- Einstellungen / Sony-Steuercode -->
 <div class="overlay" id="settings">
-  <div class="sheet glass">
+  <div class="sheet">
     <h3>Pfeile, OK &amp; Zurück</h3>
     <p>Dafür braucht Klar die Sony-Netzwerksteuerung. Einmalig am Fernseher:</p>
     <ol>
@@ -224,7 +214,7 @@
   </div>
 </div>
 
-<div class="toast glass" id="toast" role="status"></div>
+<div class="toast tile-blue" id="toast" role="status"></div>
 
 <script>
 (() => {
@@ -302,7 +292,6 @@
       $('tvname').textContent = st.name || 'Fernseher';
       if (!st.psk) setTimeout(() => toast('Für Pfeile & OK: Sony-Code unter ⚙︎ eintragen'), 600);
     } catch (e) { return; }
-    loadWallpaper();
     loadApps();
   }
 
@@ -320,15 +309,16 @@
   function renderApps() {
     const list = showAll ? allApps : allApps.filter((a) => a.dock);
     const box = $('apps'); box.textContent = '';
-    (list.length ? list : allApps).forEach((a) => {
+    (list.length ? list : allApps).forEach((a, idx) => {
       const b = document.createElement('button');
-      b.className = 'app pressable';
+      b.className = 'app tile-blue pressable';
       b.setAttribute('aria-label', a.label + ' öffnen');
       const tile = document.createElement('div');
       tile.className = 'tile' + (a.banner ? '' : ' icon');
       tile.style.backgroundImage = 'url("api/icon?pkg=' + encodeURIComponent(a.pkg) + '&t=' + encodeURIComponent(token) + '")';
       const s = document.createElement('span'); s.textContent = a.label;
-      b.append(tile, s);
+      const n = document.createElement('i'); n.className = 'num'; n.textContent = idx < 9 && !showAll ? String(idx + 1) : '';
+      b.append(n, tile, s);
       b.addEventListener('click', async () => {
         haptic();
         try { const r = await api('api/launch', { pkg: a.pkg }); toast(r.ok ? a.label + ' wird geöffnet' : 'Ließ sich nicht öffnen'); } catch (e) {}
@@ -443,6 +433,47 @@
   document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('click', (e) => {
     if (e.target === o && o.id !== 'pair') o.classList.remove('show');
   }));
+
+  // --- Begrüßung & Pixel-Uhr (wie am Fernseher) ---------------------------------
+  function greet() {
+    const h = new Date().getHours();
+    const first = h >= 5 && h < 11 ? 'Guten Morgen.' : h >= 11 && h < 17 ? 'Guten Tag.' : h >= 17 && h < 22 ? 'Guten Abend.' : 'Gute Nacht.';
+    const second = h >= 22 || h < 5 ? ['Noch eine ', 'Folge?'] : ['Was läuft ', 'heute?'];
+    const g = $('greet'); g.textContent = '';
+    const l1 = document.createElement('span'); l1.className = 'l1'; l1.textContent = first;
+    const l2 = document.createElement('span'); l2.className = 'l2'; l2.textContent = second[0];
+    const acc = document.createElement('span'); acc.className = 'accent'; acc.textContent = second[1];
+    l2.append(acc); g.append(l1, l2);
+  }
+  const GLYPHS = {
+    '0': ['01110','10001','10011','10101','11001','10001','01110'], '1': ['00100','01100','00100','00100','00100','00100','01110'],
+    '2': ['01110','10001','00001','00010','00100','01000','11111'], '3': ['11110','00001','00001','01110','00001','00001','11110'],
+    '4': ['00010','00110','01010','10010','11111','00010','00010'], '5': ['11111','10000','11110','00001','00001','10001','01110'],
+    '6': ['00110','01000','10000','11110','10001','10001','01110'], '7': ['11111','00001','00010','00100','01000','01000','01000'],
+    '8': ['01110','10001','10001','01110','10001','10001','01110'], '9': ['01110','10001','10001','01111','00001','00010','01100'],
+    ':': ['000','010','010','000','010','010','000'],
+  };
+  let colon = true;
+  function drawClock() {
+    const c = $('clock'), d = new Date();
+    const txt = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const cell = 3, dpr = Math.min(3, window.devicePixelRatio || 1);
+    let w = 0; for (const ch of txt) w += GLYPHS[ch][0].length * cell + cell; w -= cell;
+    c.style.width = w + 'px'; c.style.height = 7 * cell + 'px';
+    c.width = Math.round(w * dpr); c.height = Math.round(7 * cell * dpr);
+    const x2 = c.getContext('2d'); x2.scale(dpr, dpr); x2.fillStyle = '#FFFFFF';
+    let x = 0;
+    for (const ch of txt) {
+      const g = GLYPHS[ch];
+      if (ch !== ':' || colon) for (let r = 0; r < 7; r++) for (let k = 0; k < g[r].length; k++)
+        if (g[r][k] === '1') x2.fillRect(x + k * cell + 0.35, r * cell + 0.35, cell - 0.7, cell - 0.7);
+      x += g[0].length * cell + cell;
+    }
+    colon = !colon;
+  }
+  greet(); drawClock();
+  setInterval(drawClock, 1000);
+  setInterval(greet, 60000);
 
   if (token) start(); else showPair();
 })();

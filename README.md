@@ -53,7 +53,7 @@ Schrift: Nunito ExtraBold, SIL Open Font License 1.1 (`app/src/main/assets/fonts
 
 ## Handy-Fernbedienung (Web-App)
 
-Klar bringt eine Fernbedienung fürs Handy mit – im gleichen Midnight-Glas-Stil, ohne App-Download.
+Klar bringt eine Fernbedienung fürs Handy mit – im Abend-Design (Grau mit Punkteraster, Blau, Orange), ohne App-Download.
 
 1. Am Handy (im selben WLAN) öffnen: `http://<IP-des-TVs>:8765`
    (steht auch in Klar unter *Einstellungen → Handy-Fernbedienung*).

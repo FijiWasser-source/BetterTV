@@ -288,7 +288,7 @@ public final class RemoteHttp {
         byte[] data = assets.read(name);
         if (data == null) return text(404, "Not Found");
         Response res = new Response(200, mime(name), data);
-        res.cache = name.endsWith(".png") ? "public, max-age=604800" : "no-cache";
+        res.cache = name.endsWith(".png") || name.endsWith(".ttf") ? "public, max-age=604800" : "no-cache";
         return res;
     }
 
@@ -299,6 +299,7 @@ public final class RemoteHttp {
         if (name.endsWith(".css")) return "text/css; charset=utf-8";
         if (name.endsWith(".png")) return "image/png";
         if (name.endsWith(".svg")) return "image/svg+xml";
+        if (name.endsWith(".ttf")) return "font/ttf";
         return "application/octet-stream";
     }
 
