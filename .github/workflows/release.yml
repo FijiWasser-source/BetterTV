@@ -34,7 +34,10 @@ jobs:
         run: |
           ./gradlew --no-daemon testDebugUnitTest lintDebug assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "bettertv-${GITHUB_REF_NAME#v}.apk"
+          cp app/build/outputs/apk/release/app-release.apk bettertv.apk   # fester Name für den Download-Link
       - uses: softprops/action-gh-release@v2
         with:
-          files: bettertv-*.apk
+          files: |
+            bettertv-*.apk
+            bettertv.apk
           generate_release_notes: true

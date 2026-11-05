@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetterTV – werbefreie Startseite für Android TV</title>
+<meta name="description" content="BetterTV ersetzt die Startseite von Android TV und Google TV durch eine ruhige Ansicht: deine Apps, Uhr, Wetter und Termine. Keine Werbung, kein Tracking. Kostenlos und Open Source.">
+<meta name="theme-color" content="#2C2F34">
+<meta property="og:title" content="BetterTV – dein Fernseher, ohne Werbung">
+<meta property="og:description" content="Ruhige Startseite für Android TV & Google TV. Kostenlos, Open Source.">
+<meta property="og:image" content="img/morgen.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 12' shape-rendering='crispEdges'%3E%3Cpath fill='%23F0884A' d='M2 3h10v1h1v5h-1v1H2V9H1V4h1z'/%3E%3Cpath fill='%23FFA86B' d='M3 2h8v1H3z'/%3E%3Cpath fill='%23F0884A' d='M6 0h1v2H6z'/%3E%3Cpath fill='%231B2640' d='M4 5h2v2H4zM8 5h2v2H8z'/%3E%3C/svg%3E">
+<style>
+  @font-face { font-family: "BTVRound"; src: url("Nunito-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+  :root {
+    --bg: #2C2F34; --dot: rgba(255,255,255,.08); --surface: #212328; --key-hi: #4A4E56; --key-lo: #3A3D44;
+    --text: #FFFFFF; --muted: #A9ADB5; --blue: #8FB4FF; --orange: #FF8A1F; --orange-soft: #FFB566; --ink: #1B2640;
+    --rim: 1.5px solid rgba(255,138,31,.75); --rim-glow: 0 0 10px rgba(255,138,31,.25);
+    --focus: 0 0 0 2.5px #FF8A1F, 0 0 16px 3px rgba(255,138,31,.6);
+    --gutter: clamp(16px, 5vw, 64px); --max: 1120px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background-color: var(--bg); color: var(--text);
+    background-image: radial-gradient(var(--dot) 1.5px, transparent 1.6px); background-size: 24px 24px;
+    font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  a { color: var(--blue); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 12px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+  .round { font-family: "BTVRound", -apple-system, sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+  .skip { position: absolute; left: -9999px; top: 8px; background: var(--orange); color: #fff; padding: 10px 14px; border-radius: 10px; z-index: 10; }
+  .skip:focus { left: 8px; }
+
+  /* Kopfzeile */
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 22px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-size: 22px; }
+  .brand canvas { width: 28px; height: 24px; image-rendering: pixelated; }
+  .top nav { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .top nav a { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 12px; font-size: 15px; }
+  .top nav a:hover { color: var(--text); }
+  @media (max-width: 560px) { .top nav a.opt { display: none; } }
+
+  /* Start */
+  .hero { padding: clamp(36px, 6vw, 64px) 0 0; display: grid; grid-template-columns: 1fr; gap: 24px; }
+  .hero h1 { margin: 0; font-size: clamp(40px, 7.6vw, 66px); line-height: 1.02; }
+  .hero h1 .hi { color: var(--blue); display: block; }
+  .hero h1 em { font-style: normal; color: var(--orange); }
+  .lead { margin: 0; max-width: 34em; font-size: clamp(17px, 2.1vw, 20px); color: #E4E6EA; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 22px; border-radius: 14px;
+    font-weight: 700; font-size: 17px; text-decoration: none; color: var(--text); cursor: pointer;
+    background: linear-gradient(180deg, var(--key-hi), var(--key-lo)); border: var(--rim); box-shadow: var(--rim-glow);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 0 16px rgba(255,138,31,.35); }
+  .btn.primary { background: var(--orange); border-color: #FFB066; color: #fff; }
+  .btn.primary:hover { box-shadow: 0 0 22px rgba(255,138,31,.55); }
+  .btn small { font-weight: 600; opacity: .85; font-size: 14px; }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .fine { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .scene { position: relative; margin-top: 4px; height: clamp(180px, 24vw, 250px); }
+  .scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .scene .pause {
+    position: absolute; right: 0; bottom: 6px; background: rgba(33,35,40,.85); color: var(--muted); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
+  /* Abschnitte */
+  section { padding: clamp(56px, 9vw, 96px) 0 0; }
+  .eyebrow { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  h2 { margin: 0 0 14px; font-size: clamp(28px, 4.4vw, 40px); line-height: 1.1; }
+  h2 em { font-style: normal; color: var(--orange); }
+  .intro { margin: 0 0 28px; color: #D9DCE1; max-width: 38em; }
+
+  .card { background: rgba(33,35,40,.92); border: var(--rim); box-shadow: var(--rim-glow); border-radius: 18px; padding: 22px; }
+
+  .compat { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .compat h3 { margin: 0 0 10px; font-size: 19px; }
+  .compat ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .compat li { padding: 6px 12px; border-radius: 999px; font-size: 15px; font-weight: 600; background: rgba(255,255,255,.06); }
+  .compat .yes h3 { color: var(--blue); }
+  .compat .no { border-color: rgba(255,255,255,.14); box-shadow: none; }
+  .compat .no h3 { color: var(--muted); }
+  .compat .no li { color: var(--muted); }
+  .compat p { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .feature canvas { width: 40px; height: 40px; image-rendering: pixelated; display: block; margin-bottom: 14px; }
+  .feature h3 { margin: 0 0 6px; font-size: 20px; }
+  .feature p { margin: 0; color: #CDD0D6; font-size: 16px; }
+
+  figure { margin: 0; }
+  .shots { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 860px) { .shots { grid-template-columns: 3fr 2fr; align-items: end; } }
+  .shot { border-radius: 18px; overflow: hidden; border: var(--rim); box-shadow: var(--rim-glow), 0 20px 50px rgba(0,0,0,.35); background: var(--surface); }
+  .shot img { display: block; width: 100%; height: auto; }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  /* Installieren */
+  .tabs { display: inline-flex; gap: 6px; padding: 6px; border-radius: 16px; background: rgba(33,35,40,.92); border: 1px solid rgba(255,255,255,.1); margin-bottom: 18px; flex-wrap: wrap; }
+  .tabs button {
+    min-height: 44px; padding: 0 16px; border-radius: 11px; border: 0; background: transparent; color: var(--muted);
+    font: inherit; font-weight: 700; font-size: 16px; cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { background: linear-gradient(180deg, var(--key-hi), var(--key-lo)); color: var(--text); box-shadow: inset 0 0 0 1.5px rgba(255,138,31,.75); }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 14px; }
+  .steps li { counter-increment: s; position: relative; padding-left: 52px; }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -2px; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--orange); color: #fff; font-family: "BTVRound", sans-serif; font-weight: 800; font-size: 18px;
+  }
+  .steps strong { display: block; font-size: 18px; margin-bottom: 2px; }
+  .steps p { margin: 0; color: #CDD0D6; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 15px; }
+  code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+  pre { margin: 10px 0 0; background: #1A1C20; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px 16px; overflow-x: auto; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  .url { display: inline-block; margin-top: 8px; padding: 10px 14px; border-radius: 12px; background: #1A1C20; border: var(--rim); font-family: ui-monospace, Menlo, monospace; font-size: clamp(15px, 2.6vw, 19px); color: var(--orange-soft); overflow-wrap: anywhere; }
+  .note { margin-top: 20px; padding: 14px 16px; border-radius: 14px; background: rgba(143,180,255,.08); border: 1px solid rgba(143,180,255,.25); color: #DDE6FF; font-size: 15px; }
+  .note strong { color: var(--blue); }
+  [hidden] { display: none !important; }
+
+  .privacy { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .privacy h3 { margin: 0 0 6px; font-size: 18px; color: var(--blue); }
+  .privacy p { margin: 0; color: #CDD0D6; font-size: 16px; }
+
+  details { border-bottom: 1px solid rgba(255,255,255,.1); }
+  summary { list-style: none; cursor: pointer; padding: 18px 40px 18px 0; position: relative; font-weight: 700; font-size: 18px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; position: absolute; right: 6px; top: 12px; font-family: "BTVRound", sans-serif; font-size: 26px; color: var(--orange); }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 0 0 18px; color: #CDD0D6; max-width: 46em; }
+
+  .final { text-align: center; }
+  .final .ctas { justify-content: center; }
+  footer { margin-top: clamp(64px, 10vw, 110px); padding: 28px 0 40px; border-top: 1px solid rgba(255,255,255,.08); color: var(--muted); font-size: 14px; }
+  footer .row { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand round" href="#" aria-label="BetterTV Startseite"><canvas id="logo" width="14" height="12" aria-hidden="true"></canvas>BetterTV</a>
+    <nav aria-label="Seitennavigation">
+      <a class="opt" href="#funktionen">Funktionen</a>
+      <a href="#installieren">Installieren</a>
+      <a href="https://github.com/FijiWasser-source/BetterTV">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="inhalt">
+    <div class="hero">
+      <h1 class="round"><span class="hi" id="greet">Guten Abend.</span>Dein Fernseher, <em>ohne Werbung.</em></h1>
+      <p class="lead">BetterTV ersetzt die Startseite von Android&nbsp;TV durch eine ruhige Ansicht: deine Apps, Uhr, Wetter, deine Termine. Keine Empfehlungen, kein Tracking.</p>
+      <div class="ctas">
+        <a class="btn primary dl" href="https://github.com/FijiWasser-source/BetterTV/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6 10l6 6 6-6M4 21h16"/></svg>
+          APK herunterladen <small class="ver"></small>
+        </a>
+        <a class="btn" href="https://github.com/FijiWasser-source/BetterTV">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          Code auf GitHub
+        </a>
+      </div>
+      <p class="fine">Kostenlos · Open Source (MIT) · für Android&nbsp;TV &amp; Google&nbsp;TV</p>
+    </div>
+
+    <div class="scene" id="scene">
+      <canvas id="game" role="img" aria-label="Pixel-Szene aus der App: Das Maskottchen Pixel rennt über eine Steinbahn, ein kleines blaues Auto fährt hinterher, darüber Vollmond, Wolken und Vögel."></canvas>
+      <button class="pause" id="pause" type="button" aria-pressed="false">Pause</button>
+    </div>
+
+    <section aria-labelledby="h-compat">
+      <p class="eyebrow">Passt das zu meinem Fernseher?</p>
+      <h2 class="round" id="h-compat">Nur für Android&nbsp;TV und Google&nbsp;TV</h2>
+      <div class="compat">
+        <div class="card yes">
+          <h3 class="round">Läuft auf</h3>
+          <ul>
+            <li>Sony BRAVIA</li><li>Philips</li><li>TCL</li><li>Chromecast mit Google&nbsp;TV</li><li>Nvidia Shield</li><li>andere Android-TV-Geräte</li>
+          </ul>
+          <p>Ab Android 5. Getestet auf einem Sony BRAVIA KD-65XD7505 (Android TV 6/7).</p>
+        </div>
+        <div class="card no">
+          <h3 class="round">Läuft nicht auf</h3>
+          <ul><li>Samsung (Tizen)</li><li>LG (webOS)</li><li>Hisense (VIDAA)</li><li>Fire TV</li></ul>
+          <p>Diese Fernseher haben ein anderes System. Im Zweifel: steht in den Einstellungen „Android TV“ oder „Google TV“?</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="funktionen" aria-labelledby="h-feat">
+      <p class="eyebrow">Was drin ist</p>
+      <h2 class="round" id="h-feat">Alles, was du brauchst. <em>Sonst nichts.</em></h2>
+      <div class="features">
+        <article class="card feature"><canvas data-icon="nope" width="10" height="10" aria-hidden="true"></canvas><h3 class="round">Keine Werbung</h3><p>Keine Empfehlungszeilen, keine Banner, kein Tracking. Nur deine Apps.</p></article>
+        <article class="card feature"><canvas data-icon="tiles" width="10" height="10" aria-hidden="true"></canvas><h3 class="round">Große Kacheln</h3><p>Mit der Fernbedienung bedienbar. Die Tasten 1–9 starten Apps direkt, „Weiter mit …“ öffnet die letzte.</p></article>
+        <article class="card feature"><canvas data-icon="sun" width="10" height="10" aria-hidden="true"></canvas><h3 class="round">Uhr &amp; Wetter</h3><p>Pixel-Uhr, Datum und das Wetter für deinen Ort – ohne Konto, über Open-Meteo.</p></article>
+        <article class="card feature"><canvas data-icon="cal" width="10" height="10" aria-hidden="true"></canvas><h3 class="round">Morgens „HEUTE“</h3><p>Zum Frühstück: Wetter für den ganzen Tag und deine Termine aus dem Google Kalender.</p></article>
+        <article class="card feature"><canvas data-icon="phone" width="10" height="10" aria-hidden="true"></canvas><h3 class="round">Handy als Fernbedienung</h3><p>Touchpad, Lautstärke und App-Start im Browser. Ohne App-Download, mit PIN gekoppelt.</p></article>
+        <article class="card feature"><canvas data-icon="pixel" width="14" height="12" aria-hidden="true"></canvas><h3 class="round">Pixel spielt mit</h3><p>Ein kleines Jump-and-Run mit Wetter, Verfolgungsjagd und Lo-Fi-Musik. Selbst spielen mit den Farbtasten.</p></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-shots">
+      <p class="eyebrow">So sieht's aus</p>
+      <h2 class="round" id="h-shots">Ruhig. Und ein bisschen verspielt.</h2>
+      <div class="shots">
+        <figure><div class="shot"><img src="img/morgen.jpg" width="1000" height="562" alt="BetterTV am Morgen: Begrüßung „Guten Morgen“, Pixel-Uhr 07:42, das HEUTE-Feld mit Wetter und Terminen, darunter die App-Reihe." loading="lazy"></div><figcaption>Morgens mit Tagesübersicht.</figcaption></figure>
+        <figure><div class="shot"><img src="img/regen.jpg" width="1000" height="562" alt="BetterTV bei Regen: Pixel läuft mit Schirm, Pixel-Regen über dem ganzen Bild." loading="lazy"></div><figcaption>Draußen regnet's? Pixel auch. Vorschaubilder mit Platzhalter-Apps.</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="installieren" aria-labelledby="h-inst">
+      <p class="eyebrow">Installieren</p>
+      <h2 class="round" id="h-inst">In fünf Minuten auf dem Fernseher</h2>
+      <p class="intro">Wähle einen Weg. Ohne Computer geht's am schnellsten – mit Computer kannst du zusätzlich die Home-Taste auf BetterTV legen.</p>
+
+      <div class="tabs" role="tablist" aria-label="Installationsweg">
+        <button role="tab" id="t-tv" aria-controls="p-tv" aria-selected="true">Ohne Computer</button>
+        <button role="tab" id="t-pc" aria-controls="p-pc" aria-selected="false" tabindex="-1">Mit Computer (adb)</button>
+      </div>
+
+      <div class="card" role="tabpanel" id="p-tv" aria-labelledby="t-tv" tabindex="0">
+        <ol class="steps">
+          <li><strong>„Downloader“ installieren</strong><p>Am Fernseher im Play Store nach <b>Downloader</b> (von AFTVnews) suchen und installieren.</p></li>
+          <li><strong>Unbekannte Quellen erlauben</strong><p>Beim ersten Öffnen fragt der Fernseher nach – für Downloader erlauben. Sonst: <i>Einstellungen → Sicherheit → Unbekannte Quellen</i>.</p></li>
+          <li><strong>Diese Seite öffnen</strong><p>In Downloader ins Adressfeld tippen:</p><span class="url">fijiwasser-source.github.io/BetterTV</span></li>
+          <li><strong>„APK herunterladen“ und installieren</strong><p>Downloader lädt die Datei und fragt, ob du sie installieren willst. Fertig – BetterTV liegt jetzt bei deinen Apps.</p></li>
+        </ol>
+        <div class="note"><strong>Gut zu wissen:</strong> Ohne Computer öffnest du BetterTV wie eine normale App. Damit die <b>Home-Taste</b> direkt zu BetterTV führt, braucht es bei Google TV einmal den Weg mit Computer (Schritt 4 dort).</div>
+      </div>
+
+      <div class="card" role="tabpanel" id="p-pc" aria-labelledby="t-pc" tabindex="0" hidden>
+        <ol class="steps">
+          <li><strong>Entwickleroptionen einschalten</strong><p>7× auf <i>Build</i> klicken – Sony: <i>Einstellungen → Info → Build</i>; Google TV: <i>Einstellungen → System → Über → Android TV OS-Build</i>. Dann in den Entwickleroptionen <b>USB-Debugging</b> einschalten.</p></li>
+          <li><strong>adb und BetterTV laden</strong><p><a href="https://developer.android.com/tools/releases/platform-tools">Platform Tools</a> für deinen Computer entpacken und die <a class="dl" href="https://github.com/FijiWasser-source/BetterTV/releases/latest">BetterTV-APK</a> in denselben Ordner legen.</p></li>
+          <li><strong>Installieren</strong><p>Im Ordner <code>platform-tools</code> ein Terminal öffnen. Die IP steht am Fernseher unter <i>Einstellungen → Netzwerk</i>. Beim ersten Mal am TV „Zulassen“ bestätigen.</p>
+<pre><code>./adb connect &lt;IP-des-Fernsehers&gt;
+./adb install -r bettertv.apk</code></pre></li>
+          <li><strong>Home-Taste auf BetterTV legen</strong><p>Deaktiviert (nicht löscht) die Original-Startseite. Bei Google TV heißt sie <code>com.google.android.apps.tv.launcherx</code>, bei älteren Android-TV-Geräten wie Sony <code>com.google.android.leanbacklauncher</code>.</p>
+<pre><code>./adb shell pm disable-user --user 0 com.google.android.apps.tv.launcherx
+# ältere Geräte (z. B. Sony 2016–2019):
+./adb shell pm disable-user --user 0 com.google.android.leanbacklauncher</code></pre>
+            <p style="margin-top:10px">Rückgängig: dieselbe Zeile mit <code>pm enable</code> statt <code>pm disable-user --user 0</code>. Oder bequemer mit dem Skript <a href="https://github.com/FijiWasser-source/BetterTV/blob/master/tools/tv-setup.sh"><code>tools/tv-setup.sh</code></a> (<code>home</code> / <code>restore</code>).</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-priv">
+      <p class="eyebrow">Datenschutz</p>
+      <h2 class="round" id="h-priv">Was BetterTV über dich weiß: <em>fast nichts.</em></h2>
+      <div class="privacy">
+        <div class="card"><h3 class="round">Wetter</h3><p>Nur die Koordinaten deines Orts gehen an Open-Meteo. Kein Konto, kein Schlüssel.</p></div>
+        <div class="card"><h3 class="round">Kalender</h3><p>Nur wenn du ihn verbindest. Die Adresse bleibt auf deinem Fernseher.</p></div>
+        <div class="card"><h3 class="round">Sonst nichts</h3><p>Keine Analyse, keine Werbung, kein Konto. Auch diese Seite setzt keine Cookies.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-faq">
+      <p class="eyebrow">Fragen</p>
+      <h2 class="round" id="h-faq">Kurz beantwortet</h2>
+      <details><summary>Kostet BetterTV etwas?</summary><p>Nein. BetterTV ist kostenlos und Open Source unter der MIT-Lizenz – der komplette Code liegt auf GitHub.</p></details>
+      <details><summary>Geht das auch auf Samsung, LG oder Hisense?</summary><p>Leider nein. Diese Fernseher nutzen Tizen, webOS oder VIDAA statt Android. Mit einem Google-TV-Stick (z. B. Chromecast mit Google TV) am HDMI-Eingang klappt es aber.</p></details>
+      <details><summary>Wie mache ich alles rückgängig?</summary><p>Original-Startseite wieder einschalten (<code>pm enable …</code> oder <code>tools/tv-setup.sh auto restore</code>) und BetterTV wie jede App deinstallieren. Danach ist alles wie vorher.</p></details>
+      <details><summary>Wie bekomme ich Updates?</summary><p>Neue Version hier herunterladen und genauso installieren – deine Einstellungen bleiben erhalten. Was sich geändert hat, steht unter <a href="https://github.com/FijiWasser-source/BetterTV/releases">Releases</a>.</p></details>
+      <details><summary>Entfernt BetterTV auch die Werbung in YouTube oder Netflix?</summary><p>Nein. BetterTV ersetzt nur die Startseite. Werbung innerhalb von Apps kommt von den Apps selbst.</p></details>
+    </section>
+
+    <section class="final" aria-labelledby="h-final">
+      <h2 class="round" id="h-final">Bereit für einen <em>ruhigeren Abend?</em></h2>
+      <div class="ctas">
+        <a class="btn primary dl" href="https://github.com/FijiWasser-source/BetterTV/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6 10l6 6 6-6M4 21h16"/></svg>
+          APK herunterladen <small class="ver"></small>
+        </a>
+        <a class="btn" href="#installieren">So geht's</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="row">
+      <span>BetterTV · <a href="https://github.com/FijiWasser-source/BetterTV">GitHub</a> · <a href="https://github.com/FijiWasser-source/BetterTV/blob/master/LICENSE">MIT-Lizenz</a></span>
+      <span>Unabhängiges Projekt, nicht verbunden mit Google, Sony, Netflix oder anderen genannten Marken.</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const REPO = 'FijiWasser-source/BetterTV';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Begrüßung wie in der App
+  const h = new Date().getHours();
+  document.getElementById('greet').textContent =
+    h >= 5 && h < 11 ? 'Guten Morgen.' : h >= 11 && h < 17 ? 'Guten Tag.' : h >= 17 && h < 22 ? 'Guten Abend.' : 'Gute Nacht.';
+
+  // Neueste Version (wenn vorhanden): direkter Download + Versionsnummer
+  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(r => r.ok ? r.json() : null)
+    .then(rel => {
+      if (!rel || !rel.assets) return;
+      const apk = rel.assets.find(a => a.name === 'bettertv.apk') || rel.assets.find(a => /\.apk$/.test(a.name));
+      if (!apk) return;
+      const mb = (apk.size / 1048576).toFixed(1).replace('.', ',');
+      document.querySelectorAll('a.dl').forEach(a => a.href = apk.browser_download_url);
+      document.querySelectorAll('.ver').forEach(s => s.textContent = (rel.tag_name || '') + ' · ' + mb + ' MB');
+    })
+    .catch(() => {});
+
+  // Reiter
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function select(t, focus) {
+    tabs.forEach(x => {
+      const on = x === t;
+      x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) t.focus();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { e.preventDefault(); select(tabs[(i + d + tabs.length) % tabs.length], true); }
+      if (e.key === 'Home') { e.preventDefault(); select(tabs[0], true); }
+      if (e.key === 'End') { e.preventDefault(); select(tabs[tabs.length - 1], true); }
+    });
+  });
+
+  // ---------- Pixel-Art aus der App ----------
+  const BODY = ['......A.......','......A.......','...HHHHHHHH...','..BBBBBBBBBB..','.BBBBBBBBBBBB.','.BBBBBBBBBBBB.',
+                '.BBBBBBBBBBBB.','.BBBBBBBBBBBB.','.BBBBBBBBBBBB.','..SSSSSSSSSS..'];
+  const CAR = ['.....BBBBBB.......','....BWWBWWWB......','...BWWWBWWWWB.....','BBBBBBBBBBBBBBBBB.','RBBBBOOOOOOOOBBBBY',
+               'BBBBBBBBBBBBBBBBB.','..KKK.......KKK...','..KHK.......KHK...'];
+  const MOON = ['...XXX...','.XXXXXXX.','.XXCCXXX.','XXXCCXXXX','XXXXXXCXX','XCXXXXXXX','.XXXXCCX.','.XXXXXXX.','...XXX...'];
+  const CLOUDS = [['.XXX.','XXXXX'], ['..XXX...','.XXXXXX.','XXXXXXXX'], ['....XXX.....','..XXXXXXX...','.XXXXXXXXXX.','XXXXXXXXXXXX']];
+  const BIRD = [['X...X','.X.X.','..X..'], ['.....','XX.XX','..X..']];
+  const STAR = ['..X..','.XXX.','XXXXX','.XXX.','.X.X.'];
+  const COL = { B: '#F0884A', H: '#FFA86B', S: '#D06A33', A: '#F0884A' };
+  const CARCOL = { B: '#8FB4FF', W: '#2E3642', O: '#FF8A1F', K: '#1E2024', Y: '#FFE07A', R: '#FF5A5A' };
+
+  function grid(c, shape, x, y, s, pal, color) {
+    for (let r = 0; r < shape.length; r++) for (let k = 0; k < shape[r].length; k++) {
+      const ch = shape[r][k]; if (ch === '.') continue;
+      c.fillStyle = color || pal[ch] || '#fff';
+      c.fillRect(Math.round(x + k * s), Math.round(y + r * s), Math.ceil(s), Math.ceil(s));
+    }
+  }
+  function pixel(c, x, y, s, phase, air, scared) {
+    grid(c, BODY, x, y, s, COL);
+    c.fillStyle = '#1B2640';
+    const ey = y + 5 * s;
+    if (scared) { c.fillRect(x + 3 * s, ey - s, 2 * s, 3 * s); c.fillRect(x + 9 * s, ey - s, 2 * s, 3 * s); }
+    else { c.fillRect(x + 4 * s, ey, 2 * s, 2 * s); c.fillRect(x + 8 * s, ey, 2 * s, 2 * s); }
+    c.fillStyle = '#FFFFFF'; c.fillRect(x + 4 * s, ey, s, s); c.fillRect(x + 8 * s, ey, s, s);
+    c.fillStyle = '#1B2640'; c.fillRect(x + 6 * s, y + 8 * s, 2 * s, s);           // Mund
+    c.fillStyle = '#FF9E9E'; c.fillRect(x + 2 * s, y + 7 * s, s, s); c.fillRect(x + 11 * s, y + 7 * s, s, s);
+    c.fillStyle = '#D06A33';                                                           // Beine
+    const a = air ? 0 : (phase % 2 ? 1 : -1);
+    c.fillRect(x + (4 + a) * s, y + 10 * s, 2 * s, 2 * s); c.fillRect(x + (8 - a) * s, y + 10 * s, 2 * s, 2 * s);
+  }
+  function schluck(c, x, y, s, t) {   // blaue Figur mit langen Gliedern (aus HelperLayer nachempfunden)
+    const B = '#8FB4FF', D = '#6F94DF', I = '#1B2640';
+    c.fillStyle = B; c.fillRect(x, y, 8 * s, 7 * s);                     // Kopf
+    c.fillStyle = D; c.fillRect(x, y + 6 * s, 8 * s, s);
+    c.fillStyle = I; c.fillRect(x + 2 * s, y + 2 * s, s, 2 * s); c.fillRect(x + 5 * s, y + 2 * s, s, 2 * s);
+    c.fillRect(x + 3 * s, y + 5 * s, 2 * s, s);
+    c.fillStyle = B; c.fillRect(x + 3 * s, y + 7 * s, 2 * s, 6 * s);     // Körper
+    const sw = Math.sin(t * 4) > 0 ? 1 : 0;
+    c.fillRect(x + 5 * s, y + 8 * s, 4 * s, s); c.fillRect(x + 8 * s, y + 8 * s, s, (4 + sw) * s); // Arm zum Sauger
+    c.fillRect(x - s, y + 8 * s, s, 5 * s);
+    c.fillRect(x + 2 * s, y + 13 * s, s, 7 * s); c.fillRect(x + 5 * s, y + 13 * s, s, 7 * s);         // lange Beine
+    c.fillStyle = '#FF8A1F'; c.fillRect(x + 9 * s, y + 15 * s, 7 * s, 4 * s);                         // Staubsauger
+    c.fillStyle = '#FFB066'; c.fillRect(x + 9 * s, y + 15 * s, 7 * s, s);
+    c.fillStyle = '#1E2024'; c.fillRect(x + 10 * s, y + 19 * s, 2 * s, s); c.fillRect(x + 14 * s, y + 19 * s, 2 * s, s);
+  }
+
+  // Logo + Funktions-Symbole
+  const ICONS = {
+    nope: { s: ['..XXXXXX..','.X......X.','X....XX..X','X...XX...X','X..XX....X','X.XX.....X','X.X......X','.X......X.','..XXXXXX..','..........'], c: '#FF8A1F' },
+    tiles: { s: ['XXXX.XXXX.','XXXX.XXXX.','XXXX.XXXX.','..........','XXXX.XXXX.','XXXX.XXXX.','XXXX.XXXX.','..........','..........','..........'], c: '#8FB4FF' },
+    sun: { s: ['....X.....','.X.....X..','...XXX....','..XXXXX...','X.XXXXX.X.','..XXXXX...','...XXX....','.X.....X..','....X.....','..........'], c: '#FFB566' },
+    cal: { s: ['.X....X...','XXXXXXXXX.','X.......X.','XXXXXXXXX.','X.X.X.X.X.','X.......X.','X.X.X.X.X.','X.......X.','XXXXXXXXX.','..........'], c: '#8FB4FF' },
+    phone: { s: ['..XXXXX...','..X...X...','..X...X...','..X...X...','..X...X...','..X...X...','..X...X...','..X.X.X...','..XXXXX...','..........'], c: '#FF8A1F' }
+  };
+  document.querySelectorAll('canvas[data-icon]').forEach(cv => {
+    const c = cv.getContext('2d'), n = cv.dataset.icon;
+    if (n === 'pixel') return pixel(c, 0, 0, 1, 0, true);
+    grid(c, ICONS[n].s, 0, 0, 1, null, ICONS[n].c);
+  });
+  { const c = document.getElementById('logo').getContext('2d'); pixel(c, 0, 0, 1, 0, true); }
+
+  // ---------- Szene: Endlos-Lauf ----------
+  const cv = document.getElementById('game'), c = cv.getContext('2d');
+  const pauseBtn = document.getElementById('pause');
+  let W = 0, H = 0, S = 4, paused = false, t = 0, last = 0;
+  const night = h >= 18 || h < 6;
+  let clouds = [], birds = [], obstacles = [], stars = [], puffs = [];
+  let heroY = 0, heroVy = 0, carY = 0, carVy = 0, dist = 0, scared = 0, nextLook = 4, collected = 0;
+
+  function resize() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    W = cv.width; H = cv.height; S = Math.max(2, Math.round(H / 62));
+    if (!clouds.length) {
+      for (let i = 0; i < 5; i++) clouds.push({ x: Math.random() * W, y: (0.08 + Math.random() * 0.3) * H, v: CLOUDS[i % 3], sp: 0.15 + Math.random() * 0.2 });
+      for (let i = 0; i < 3; i++) birds.push({ x: Math.random() * W, y: (0.12 + Math.random() * 0.2) * H, ph: Math.random() * 6 });
+    }
+    draw(0);
+  }
+
+  const ground = () => H - 3 * S;
+  const heroX = () => Math.round(W * 0.42);
+
+  function spawn() {
+    const lastX = obstacles.length ? obstacles[obstacles.length - 1].x : W * 0.6;
+    if (lastX < W + 40 * S) {
+      const gap = (28 + Math.random() * 30) * S;
+      obstacles.push({ x: Math.max(W + 10 * S, lastX + gap), type: Math.random() < 0.5 ? 0 : 1 });
+      if (Math.random() < 0.6) stars.push({ x: lastX + gap / 2, y: 22 + Math.random() * 8, got: false });
+    }
+  }
+
+  function step(dt) {
+    const speed = 26 * S; // px/s
+    t += dt; dist += speed * dt;
+    clouds.forEach(cl => { cl.x -= cl.sp * speed * 0.1 * dt * 10 / 10; if (cl.x < -14 * S * 2) { cl.x = W + Math.random() * 80; cl.y = (0.08 + Math.random() * 0.3) * H; } });
+    birds.forEach(b => { b.x += 14 * S * dt; b.ph += dt * 6; if (b.x > W + 20) { b.x = -30; b.y = (0.12 + Math.random() * 0.2) * H; } });
+    obstacles.forEach(o => o.x -= speed * dt);
+    stars.forEach(s => s.x -= speed * dt);
+    obstacles = obstacles.filter(o => o.x > -10 * S);
+    stars = stars.filter(s => s.x > -10 * S && !s.got);
+    spawn();
+    // Pixel springt rechtzeitig über Hindernisse
+    const hx = heroX();
+    const next = obstacles.find(o => o.x + 4 * S > hx);
+    if (heroY === 0 && next && next.x - (hx + 14 * S) < 7 * S && next.x > hx) heroVy = 46 * S;
+    heroVy -= 150 * S * dt; heroY = Math.max(0, heroY + heroVy * dt); if (heroY === 0) heroVy = 0;
+    stars.forEach(s => { if (Math.abs(s.x - (hx + 7 * S)) < 6 * S && heroY > 10 * S) { s.got = true; collected++; } });
+    // Auto springt ebenfalls
+    const cx = hx - 34 * S;
+    const nc = obstacles.find(o => o.x + 4 * S > cx);
+    if (carY === 0 && nc && nc.x - (cx + 18 * S) < 5 * S && nc.x > cx) carVy = 40 * S;
+    carVy -= 150 * S * dt; carY = Math.max(0, carY + carVy * dt); if (carY === 0) carVy = 0;
+    if (Math.random() < dt * 2.2) puffs.push({ x: cx - S, y: ground() - 3 * S - carY, a: 0 });
+    puffs.forEach(p => { p.a += dt; p.x -= speed * dt * 0.6; p.y -= 6 * S * dt; });
+    puffs = puffs.filter(p => p.a < 1.2);
+    // Schulterblick + Erschrecken
+    nextLook -= dt; if (nextLook < 0) { scared = 0.9; nextLook = 5 + Math.random() * 6; }
+    scared = Math.max(0, scared - dt);
+  }
+
+  function draw() {
+    c.clearRect(0, 0, W, H);
+    const s = S, g = ground(), hx = heroX();
+    // Himmel
+    const R = 15 * s, mx = Math.min(W * 0.78, W - R - 8 * s), my = Math.max(H * 0.1, R - 7 * s);
+    if (night) {
+      const ccx = mx + 7.2 * s, ccy = my + 7.2 * s;
+      const rg = c.createRadialGradient(ccx, ccy, 0, ccx, ccy, R);
+      rg.addColorStop(0, 'rgba(255,255,255,.14)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = rg; c.beginPath(); c.arc(ccx, ccy, R, 0, Math.PI * 2); c.fill();
+      grid(c, MOON, mx, my, s * 1.6, { X: '#F2F3F5', C: '#C9CCD2' });
+    } else {
+      grid(c, ['..XXX..','.XXXXX.','XXXXXXX','XXXXXXX','XXXXXXX','.XXXXX.','..XXX..'], mx, my, s * 1.6, null, '#FFC56B');
+    }
+    clouds.forEach(cl => grid(c, cl.v, cl.x, cl.y, s * 1.4, null, 'rgba(120,124,132,.55)'));
+    birds.forEach(b => grid(c, BIRD[Math.sin(b.ph) > 0 ? 0 : 1], b.x, b.y, s * 0.8, null, '#7C8088'));
+    // Bahn aus Steinen
+    const off = -(dist % (6 * s));
+    for (let x = off; x < W; x += 6 * s) {
+      c.fillStyle = '#8A8E96'; c.fillRect(x, g, 6 * s - 1, s);
+      c.fillStyle = '#6C7078'; c.fillRect(x, g + s, 6 * s - 1, s);
+      c.fillStyle = '#4C5058'; c.fillRect(x, g + 2 * s, 6 * s - 1, s);
+    }
+    // Hindernisse + Sterne
+    obstacles.forEach(o => {
+      if (o.type === 0) { c.fillStyle = '#9A9EA6'; c.fillRect(o.x, g - 3 * s, 4 * s, 3 * s); c.fillStyle = '#B8BCC4'; c.fillRect(o.x, g - 3 * s, 4 * s, s); }
+      else { c.fillStyle = '#C98A4B'; c.fillRect(o.x, g - 4 * s, 4 * s, 4 * s); c.fillStyle = '#8F5E2E'; c.fillRect(o.x + s, g - 3 * s, 2 * s, 2 * s); }
+    });
+    stars.forEach(st => grid(c, STAR, st.x, g - st.y * s, s, null, '#FFC94A'));
+    // Rauch + Auto
+    puffs.forEach(p => { c.fillStyle = 'rgba(201,204,210,' + (0.45 * (1 - p.a / 1.2)) + ')'; const r = s * (0.8 + p.a * 1.6); c.fillRect(p.x - r, p.y - r, 2 * r, 2 * r); });
+    const cx = hx - 34 * s, cy = g - 8 * s - carY;
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(cx + s, g - s * 0.4, 16 * s, s * 0.8);
+    const hub = Math.floor(t * 8) % 2 ? '#B3B7BE' : '#6C7078';
+    grid(c, CAR, cx, cy, s, Object.assign({}, CARCOL, { H: hub }));
+    if (!night) {} else { c.fillStyle = 'rgba(255,224,122,.14)'; c.fillRect(cx + 18 * s, cy + 3.5 * s, 9 * s, 2 * s); }
+    // Pixel
+    const py = g - 12 * s - heroY;
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(hx + 2 * s, g - s * 0.4, 10 * s, s * 0.8);
+    pixel(c, hx, py, s, Math.floor(t * 9), heroY > 0, scared > 0);
+    if (scared > 0) grid(c, ['X','X','X','.','X'], hx + 15 * s, py - 4 * s, s, null, '#FF8A1F');
+    // Schluck am linken Rand
+    if (W > 520) schluck(c, Math.round(W * 0.06), g - 20 * s, s, t);
+    // Sternzähler
+    grid(c, STAR, W * 0.06, H * 0.1, s, null, '#FFC94A');
+    c.fillStyle = '#8FB4FF'; c.font = '800 ' + (5 * s) + 'px BTVRound, sans-serif'; c.textBaseline = 'top';
+    c.fillText(String(collected), W * 0.06 + 7 * s, H * 0.1 - s * 0.4);
+  }
+
+  function frame(ts) {
+    const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+    if (!paused) { step(dt); draw(); }
+    if (!paused) requestAnimationFrame(frame);
+  }
+  function setPaused(p) {
+    paused = p; pauseBtn.textContent = p ? 'Weiter' : 'Pause'; pauseBtn.setAttribute('aria-pressed', p);
+    if (!p) { last = performance.now(); requestAnimationFrame(frame); }
+  }
+  pauseBtn.addEventListener('click', () => setPaused(!paused));
+  addEventListener('resize', resize);
+  resize();
+  // Startbild: ein paar Sekunden "vorspulen", damit sofort etwas los ist
+  for (let i = 0; i < 90; i++) step(1 / 30);
+  draw();
+  if (reduce.matches) { paused = true; pauseBtn.hidden = true; }
+  else { last = performance.now(); requestAnimationFrame(frame); }
+  // nicht im Hintergrund rechnen
+  new IntersectionObserver(es => es.forEach(e => {
+    if (reduce.matches || pauseBtn.getAttribute('aria-pressed') === 'true') return;
+    if (e.isIntersecting && paused) setPaused(false); else if (!e.isIntersecting && !paused) { paused = true; }
+  })).observe(cv);
+})();
+</script>
+</body>
+</html>

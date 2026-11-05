@@ -3,6 +3,8 @@
 **Eine werbefreie, ruhige Startseite für Android TV und Google TV.** Statt Empfehlungs- und
 Werbezeilen: deine Apps, Uhr, Wetter, deine Termine – und ein kleines Pixel-Jump-and-Run.
 
+**Website & Download:** [fijiwasser-source.github.io/BetterTV](https://fijiwasser-source.github.io/BetterTV/)
+
 ![Startansicht am Morgen](app/src/test/snapshots/images/de.bettertv.launcher_PreviewTest_morgen_morgen.png)
 
 - **Keine Werbung, keine Empfehlungen, kein Tracking.** Einstellungen bleiben auf dem Gerät.
